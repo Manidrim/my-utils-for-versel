@@ -1,241 +1,482 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-type Operator = "+" | "-" | "*" | "/";
-
-type State = {
-  current: string;
-  previous: number | null;
-  operator: Operator | null;
-  justEvaluated: boolean;
-  error: boolean;
-};
-
-const initialState: State = {
-  current: "0",
-  previous: null,
-  operator: null,
-  justEvaluated: false,
-  error: false,
-};
-
-const OPERATOR_SYMBOLS: Record<Operator, string> = {
-  "+": "+",
-  "-": "−",
-  "*": "×",
-  "/": "÷",
-};
-
-function compute(a: number, b: number, op: Operator): number | null {
-  switch (op) {
-    case "+":
-      return a + b;
-    case "-":
-      return a - b;
-    case "*":
-      return a * b;
-    case "/":
-      return b === 0 ? null : a / b;
-  }
-}
-
-function formatNumber(n: number): string {
-  if (!Number.isFinite(n)) return "Error";
-  const rounded = Math.round(n * 1e12) / 1e12;
-  return String(rounded);
-}
-
-function inputDigit(state: State, digit: string): State {
-  if (state.error) return { ...initialState, current: digit };
-  if (state.justEvaluated) {
-    return { ...initialState, current: digit };
-  }
-  if (state.current === "0") {
-    return { ...state, current: digit };
-  }
-  if (state.current.replace("-", "").replace(".", "").length >= 15) {
-    return state;
-  }
-  return { ...state, current: state.current + digit };
-}
-
-function inputDecimal(state: State): State {
-  if (state.error) return { ...initialState, current: "0." };
-  if (state.justEvaluated) {
-    return { ...initialState, current: "0." };
-  }
-  if (state.current.includes(".")) return state;
-  return { ...state, current: state.current + "." };
-}
-
-function chooseOperator(state: State, op: Operator): State {
-  if (state.error) return state;
-  const currentNum = parseFloat(state.current);
-
-  if (state.previous !== null && state.operator && !state.justEvaluated) {
-    const result = compute(state.previous, currentNum, state.operator);
-    if (result === null) {
-      return { ...initialState, current: "Error", error: true };
-    }
-    return {
-      current: formatNumber(result),
-      previous: result,
-      operator: op,
-      justEvaluated: true,
-      error: false,
-    };
-  }
-
-  return {
-    current: state.current,
-    previous: currentNum,
-    operator: op,
-    justEvaluated: true,
-    error: false,
-  };
-}
-
-function evaluate(state: State): State {
-  if (state.error) return state;
-  if (state.operator === null || state.previous === null) return state;
-  const currentNum = parseFloat(state.current);
-  const result = compute(state.previous, currentNum, state.operator);
-  if (result === null) {
-    return { ...initialState, current: "Error", error: true };
-  }
-  return {
-    current: formatNumber(result),
-    previous: null,
-    operator: null,
-    justEvaluated: true,
-    error: false,
-  };
-}
-
-function backspace(state: State): State {
-  if (state.error || state.justEvaluated) return state;
-  if (state.current.length <= 1 || (state.current.length === 2 && state.current.startsWith("-"))) {
-    return { ...state, current: "0" };
-  }
-  return { ...state, current: state.current.slice(0, -1) };
-}
+type HistoryEntry = { expr: string; result: string };
+type KeyType = "num" | "op" | "eq" | "clr";
 
 export default function Calculator() {
-  const [state, setState] = useState<State>(initialState);
+  const router = useRouter();
+  const [display, setDisplay] = useState("0");
+  const [expression, setExpression] = useState("");
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [justEvaluated, setJustEvaluated] = useState(false);
 
-  const onDigit = useCallback(
-    (d: string) => setState((s) => inputDigit(s, d)),
-    [],
+  const handleDigit = useCallback(
+    (d: string) => {
+      if (justEvaluated) {
+        setDisplay(d);
+        setExpression("");
+        setJustEvaluated(false);
+        return;
+      }
+      setDisplay((prev) =>
+        prev === "0" ? d : prev.length < 14 ? prev + d : prev
+      );
+    },
+    [justEvaluated]
   );
-  const onDecimal = useCallback(() => setState((s) => inputDecimal(s)), []);
-  const onOperator = useCallback(
-    (op: Operator) => setState((s) => chooseOperator(s, op)),
-    [],
+
+  const handleDecimal = useCallback(() => {
+    if (justEvaluated) {
+      setDisplay("0,");
+      setExpression("");
+      setJustEvaluated(false);
+      return;
+    }
+    if (!display.includes(",")) setDisplay((prev) => prev + ",");
+  }, [justEvaluated, display]);
+
+  const handleOperator = useCallback(
+    (op: string) => {
+      setJustEvaluated(false);
+      const displayOp: Record<string, string> = {
+        "+": "+",
+        "-": "−",
+        "*": "×",
+        "/": "÷",
+      };
+      setExpression(display + " " + (displayOp[op] ?? op) + " ");
+      setDisplay("0");
+    },
+    [display]
   );
-  const onEquals = useCallback(() => setState((s) => evaluate(s)), []);
-  const onClear = useCallback(() => setState(initialState), []);
-  const onBackspace = useCallback(() => setState((s) => backspace(s)), []);
+
+  const handleEquals = useCallback(() => {
+    try {
+      const expr = expression + display;
+      const evalExpr = expr
+        .replace(/,/g, ".")
+        .replace(/÷/g, "/")
+        .replace(/×/g, "*")
+        .replace(/−/g, "-");
+      // eslint-disable-next-line no-new-func
+      const result = Function(
+        '"use strict"; return (' + evalExpr + ")"
+      )() as number;
+      const resultStr = new Intl.NumberFormat("fr-FR", {
+        maximumFractionDigits: 10,
+      }).format(result);
+      setHistory((h) => [{ expr, result: resultStr }, ...h].slice(0, 6));
+      setDisplay(resultStr);
+      setExpression(expr + " =");
+      setJustEvaluated(true);
+    } catch {
+      setDisplay("Erreur");
+      setExpression("");
+    }
+  }, [expression, display]);
+
+  const handleClear = useCallback(() => {
+    setDisplay("0");
+    setExpression("");
+    setJustEvaluated(false);
+  }, []);
+
+  const handleSign = useCallback(() => {
+    setDisplay((d) => (d.startsWith("-") ? d.slice(1) : "-" + d));
+  }, []);
+
+  const handlePercent = useCallback(() => {
+    try {
+      const val = parseFloat(display.replace(",", ".")) / 100;
+      setDisplay(
+        new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 10 }).format(
+          val
+        )
+      );
+    } catch {
+      /* ignore */
+    }
+  }, [display]);
+
+  const handleBackspace = useCallback(() => {
+    if (justEvaluated) return;
+    setDisplay((d) => (d.length > 1 ? d.slice(0, -1) : "0"));
+  }, [justEvaluated]);
 
   useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      const k = e.key;
-      if (/^[0-9]$/.test(k)) {
-        onDigit(k);
-      } else if (k === ".") {
-        onDecimal();
-      } else if (k === "+" || k === "-" || k === "*" || k === "/") {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key >= "0" && e.key <= "9") handleDigit(e.key);
+      else if (e.key === ".") handleDecimal();
+      else if (e.key === "+") handleOperator("+");
+      else if (e.key === "-") handleOperator("-");
+      else if (e.key === "*") handleOperator("*");
+      else if (e.key === "/") {
         e.preventDefault();
-        onOperator(k);
-      } else if (k === "Enter" || k === "=") {
-        e.preventDefault();
-        onEquals();
-      } else if (k === "Backspace") {
-        onBackspace();
-      } else if (k === "Escape") {
-        onClear();
-      }
-    }
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [onDigit, onDecimal, onOperator, onEquals, onBackspace, onClear]);
+        handleOperator("/");
+      } else if (e.key === "Enter" || e.key === "=") handleEquals();
+      else if (e.key === "Backspace") handleBackspace();
+      else if (e.key === "Escape") handleClear();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [
+    handleDigit,
+    handleDecimal,
+    handleOperator,
+    handleEquals,
+    handleBackspace,
+    handleClear,
+  ]);
 
-  const displayValue = state.error ? "Error" : state.current;
-
-  const digitClass =
-    "rounded-xl p-4 text-xl font-medium bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 active:scale-95 transition";
-  const opClass =
-    "rounded-xl p-4 text-xl font-semibold bg-orange-500 hover:bg-orange-400 text-white active:scale-95 transition";
-  const utilClass =
-    "rounded-xl p-4 text-xl font-medium bg-zinc-300 hover:bg-zinc-400 dark:bg-zinc-700 dark:hover:bg-zinc-600 active:scale-95 transition";
-  const equalsClass =
-    "rounded-xl p-4 text-xl font-semibold bg-orange-600 hover:bg-orange-500 text-white active:scale-95 transition";
+  const fontSize =
+    display.length > 11 ? "24px" : display.length > 7 ? "32px" : "42px";
 
   return (
-    <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-zinc-900 shadow-xl p-4 border border-zinc-200 dark:border-zinc-800">
-      <div
-        aria-live="polite"
-        className="mb-4 rounded-xl bg-zinc-100 dark:bg-zinc-950 px-4 py-6 text-right text-4xl font-mono tracking-tight overflow-x-auto"
-      >
-        {displayValue}
-        {state.operator && !state.error && (
-          <span className="ml-2 text-orange-500">
-            {OPERATOR_SYMBOLS[state.operator]}
-          </span>
+    <div
+      style={{
+        fontFamily: "var(--font-dm-sans)",
+        maxWidth: "960px",
+        margin: "0 auto",
+        padding: "32px 24px",
+        display: "grid",
+        gridTemplateColumns: "1fr 280px",
+        gap: "32px",
+        alignItems: "start",
+      }}
+    >
+      {/* Main calculator */}
+      <div>
+        <button
+          onClick={() => router.push("/")}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            color: "#7A5550",
+            fontSize: "13px",
+            fontWeight: 500,
+            padding: "0 0 20px 0",
+            marginLeft: "-4px",
+            fontFamily: "var(--font-dm-sans)",
+          }}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          >
+            <path d="M9 2L4 7l5 5" />
+          </svg>
+          Tous les outils
+        </button>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            marginBottom: "24px",
+          }}
+        >
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "10px",
+              background: "#FEF0ED",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#E07B72",
+              flexShrink: 0,
+            }}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            >
+              <rect x="4" y="2" width="16" height="20" rx="2" />
+              <line x1="8" y1="6" x2="16" y2="6" />
+              <line x1="8" y1="10" x2="10" y2="10" />
+              <line x1="12" y1="10" x2="14" y2="10" />
+              <line x1="16" y1="10" x2="16" y2="10" />
+              <line x1="8" y1="14" x2="10" y2="14" />
+              <line x1="12" y1="14" x2="14" y2="14" />
+              <line x1="16" y1="14" x2="16" y2="14" />
+              <line x1="8" y1="18" x2="10" y2="18" />
+              <line x1="12" y1="18" x2="14" y2="18" />
+              <line x1="16" y1="18" x2="16" y2="18" />
+            </svg>
+          </div>
+          <div>
+            <div
+              style={{
+                fontFamily: "var(--font-dm-serif)",
+                fontSize: "22px",
+                color: "#2C1A17",
+              }}
+            >
+              Calculatrice
+            </div>
+            <div style={{ fontSize: "12px", color: "#B89490" }}>
+              Calculs simples et rapides
+            </div>
+          </div>
+        </div>
+
+        {/* Display */}
+        <div
+          aria-live="polite"
+          style={{
+            background: "#FEF0ED",
+            border: "1px solid #EDD9D5",
+            borderRadius: "14px",
+            padding: "20px 24px",
+            marginBottom: "16px",
+            textAlign: "right",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "var(--font-jetbrains-mono)",
+              fontSize: "13px",
+              color: "#B89490",
+              minHeight: "18px",
+              marginBottom: "6px",
+            }}
+          >
+            {expression || " "}
+          </div>
+          <div
+            style={{
+              fontFamily: "var(--font-jetbrains-mono)",
+              fontSize,
+              fontWeight: 500,
+              color: "#2C1A17",
+              letterSpacing: "-0.02em",
+              lineHeight: 1.1,
+              transition: "font-size 100ms",
+            }}
+          >
+            {display}
+          </div>
+        </div>
+
+        {/* Keypad */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: "8px",
+          }}
+        >
+          <CalcKey label="AC" type="clr" onClick={handleClear} />
+          <CalcKey label="±" type="op" onClick={handleSign} />
+          <CalcKey label="%" type="op" onClick={handlePercent} />
+          <CalcKey label="÷" type="op" onClick={() => handleOperator("/")} />
+
+          {[7, 8, 9].map((n) => (
+            <CalcKey
+              key={n}
+              label={String(n)}
+              onClick={() => handleDigit(String(n))}
+            />
+          ))}
+          <CalcKey label="×" type="op" onClick={() => handleOperator("*")} />
+
+          {[4, 5, 6].map((n) => (
+            <CalcKey
+              key={n}
+              label={String(n)}
+              onClick={() => handleDigit(String(n))}
+            />
+          ))}
+          <CalcKey label="−" type="op" onClick={() => handleOperator("-")} />
+
+          {[1, 2, 3].map((n) => (
+            <CalcKey
+              key={n}
+              label={String(n)}
+              onClick={() => handleDigit(String(n))}
+            />
+          ))}
+          <CalcKey label="+" type="op" onClick={() => handleOperator("+")} />
+
+          <CalcKey label="0" wide onClick={() => handleDigit("0")} />
+          <CalcKey label="," onClick={handleDecimal} />
+          <CalcKey label="=" type="eq" onClick={handleEquals} />
+        </div>
+      </div>
+
+      {/* History sidebar */}
+      <div style={{ paddingTop: "66px" }}>
+        <div
+          style={{
+            fontSize: "11px",
+            fontWeight: 600,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "#B89490",
+            marginBottom: "12px",
+            fontFamily: "var(--font-dm-sans)",
+          }}
+        >
+          Historique
+        </div>
+
+        {history.length === 0 ? (
+          <div
+            style={{
+              fontSize: "13px",
+              color: "#D4B8B4",
+              textAlign: "center",
+              padding: "32px 0",
+              fontFamily: "var(--font-dm-sans)",
+            }}
+          >
+            Vos calculs apparaîtront ici
+          </div>
+        ) : (
+          history.map((h, i) => (
+            <div
+              key={i}
+              onClick={() => {
+                setDisplay(h.result);
+                setExpression("");
+                setJustEvaluated(true);
+              }}
+              style={{
+                background: i === 0 ? "#FEF0ED" : "white",
+                border: "1px solid #EDD9D5",
+                borderRadius: "8px",
+                padding: "10px 14px",
+                marginBottom: "8px",
+                cursor: "pointer",
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "var(--font-jetbrains-mono)",
+                  fontSize: "11px",
+                  color: "#B89490",
+                  marginBottom: "2px",
+                }}
+              >
+                {h.expr}
+              </div>
+              <div
+                style={{
+                  fontFamily: "var(--font-jetbrains-mono)",
+                  fontSize: "16px",
+                  fontWeight: 500,
+                  color: "#2C1A17",
+                }}
+              >
+                {h.result}
+              </div>
+            </div>
+          ))
+        )}
+
+        {history.length > 0 && (
+          <button
+            onClick={() => setHistory([])}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "11px",
+              color: "#B89490",
+              padding: "4px 0",
+              fontFamily: "var(--font-dm-sans)",
+            }}
+          >
+            Effacer l&apos;historique
+          </button>
         )}
       </div>
-
-      <div className="grid grid-cols-4 gap-2">
-        <button type="button" onClick={onClear} className={utilClass} aria-label="Clear">
-          C
-        </button>
-        <button type="button" onClick={onBackspace} className={utilClass} aria-label="Backspace">
-          ⌫
-        </button>
-        <div aria-hidden />
-        <button type="button" onClick={() => onOperator("/")} className={opClass} aria-label="Divide">
-          ÷
-        </button>
-
-        <button type="button" onClick={() => onDigit("7")} className={digitClass}>7</button>
-        <button type="button" onClick={() => onDigit("8")} className={digitClass}>8</button>
-        <button type="button" onClick={() => onDigit("9")} className={digitClass}>9</button>
-        <button type="button" onClick={() => onOperator("*")} className={opClass} aria-label="Multiply">
-          ×
-        </button>
-
-        <button type="button" onClick={() => onDigit("4")} className={digitClass}>4</button>
-        <button type="button" onClick={() => onDigit("5")} className={digitClass}>5</button>
-        <button type="button" onClick={() => onDigit("6")} className={digitClass}>6</button>
-        <button type="button" onClick={() => onOperator("-")} className={opClass} aria-label="Subtract">
-          −
-        </button>
-
-        <button type="button" onClick={() => onDigit("1")} className={digitClass}>1</button>
-        <button type="button" onClick={() => onDigit("2")} className={digitClass}>2</button>
-        <button type="button" onClick={() => onDigit("3")} className={digitClass}>3</button>
-        <button type="button" onClick={() => onOperator("+")} className={opClass} aria-label="Add">
-          +
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onDigit("0")}
-          className={`${digitClass} col-span-2`}
-        >
-          0
-        </button>
-        <button type="button" onClick={onDecimal} className={digitClass}>
-          .
-        </button>
-        <button type="button" onClick={onEquals} className={equalsClass} aria-label="Equals">
-          =
-        </button>
-      </div>
-
-      <p className="mt-4 text-center text-xs text-zinc-500">
-        Clavier pris en charge : chiffres, + − × ÷, Entrée, Retour arrière, Échap
-      </p>
     </div>
+  );
+}
+
+function CalcKey({
+  label,
+  type = "num",
+  wide,
+  onClick,
+}: {
+  label: string;
+  type?: KeyType;
+  wide?: boolean;
+  onClick: () => void;
+}) {
+  const [pressed, setPressed] = useState(false);
+
+  const styles: Record<KeyType, React.CSSProperties> = {
+    num: {
+      background: "white",
+      border: "1px solid #EDD9D5",
+      color: "#2C1A17",
+      boxShadow: "0 2px 4px rgba(180,80,60,0.05)",
+    },
+    op: {
+      background: "#FEF0ED",
+      border: "1px solid #F5C4BC",
+      color: "#C9524A",
+      boxShadow: "none",
+    },
+    eq: {
+      background: "#E07B72",
+      border: "none",
+      color: "white",
+      boxShadow: "0 3px 10px rgba(180,80,60,0.28)",
+    },
+    clr: {
+      background: "#F9E5E3",
+      border: "1px solid #F0B4AC",
+      color: "#C0392B",
+      boxShadow: "none",
+    },
+  };
+
+  return (
+    <button
+      aria-label={label}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => {
+        setPressed(false);
+        onClick();
+      }}
+      onMouseLeave={() => setPressed(false)}
+      style={{
+        gridColumn: wide ? "span 2" : "span 1",
+        height: "58px",
+        ...styles[type],
+        borderRadius: "10px",
+        cursor: "pointer",
+        fontFamily: "var(--font-dm-sans)",
+        fontSize: "16px",
+        fontWeight: 500,
+        transform: pressed ? "scale(0.93)" : "scale(1)",
+        transition: "transform 80ms, box-shadow 150ms",
+      }}
+    >
+      {label}
+    </button>
   );
 }
