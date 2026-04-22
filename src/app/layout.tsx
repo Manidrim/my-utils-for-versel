@@ -1,23 +1,34 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { DM_Sans, DM_Serif_Display, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import NavBar from "./components/NavBar";
+import Footer from "./components/Footer";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const dmSerifDisplay = DM_Serif_Display({
+  variable: "--font-dm-serif",
   subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
   title: {
-    default: "Mes outils front",
-    template: "%s · Mes outils front",
+    default: "Toolbox — Vos outils en ligne",
+    template: "%s · Toolbox",
   },
-  description: "Collection de petits utilitaires web déployés sur Vercel.",
+  description: "Outils simples, résultats clairs. Collection de petits utilitaires web déployés sur Vercel.",
 };
 
 export default function RootLayout({
@@ -28,10 +39,23 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${dmSans.variable} ${dmSerifDisplay.variable} ${jetbrainsMono.variable} h-full`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100">
-        {children}
+      <body
+        style={{
+          minHeight: "100%",
+          display: "flex",
+          flexDirection: "column",
+          background: "#FDF6F4",
+          color: "#2C1A17",
+          margin: 0,
+        }}
+      >
+        <NavBar />
+        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+          {children}
+        </div>
+        <Footer />
       </body>
     </html>
   );
