@@ -1,3 +1,5 @@
+import PercentageCalculator from "./PercentageCalculator";
+
 export default function PercentagePage() {
   return (
     <div className="mx-auto max-w-2xl p-8">
