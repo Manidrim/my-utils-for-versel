@@ -43,7 +43,7 @@ export default function RootLayout({
     >
       <body
         style={{
-          minHeight: "100%",
+          minHeight: "100vh",
           display: "flex",
           flexDirection: "column",
           background: "#FDF6F4",

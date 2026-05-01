@@ -12,6 +12,17 @@ export default function Calculator() {
   const [expression, setExpression] = useState("");
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [justEvaluated, setJustEvaluated] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const handleDigit = useCallback(
     (d: string) => {
@@ -138,12 +149,12 @@ export default function Calculator() {
     <div
       style={{
         fontFamily: "var(--font-dm-sans)",
-        maxWidth: "960px",
+        maxWidth: "min(960px, 95vw)",
         margin: "0 auto",
-        padding: "32px 24px",
+        padding: "clamp(20px, 5vw, 32px) clamp(16px, 4vw, 24px)",
         display: "grid",
-        gridTemplateColumns: "1fr 280px",
-        gap: "32px",
+        gridTemplateColumns: isMobile ? "1fr" : "1fr min(280px, 30vw)",
+        gap: "clamp(16px, 4vw, 32px)",
         alignItems: "start",
       }}
     >
@@ -159,7 +170,7 @@ export default function Calculator() {
             alignItems: "center",
             gap: "6px",
             color: "#7A5550",
-            fontSize: "13px",
+            fontSize: "clamp(11px, 2.5vw, 13px)",
             fontWeight: 500,
             padding: "0 0 20px 0",
             marginLeft: "-4px",
@@ -190,8 +201,8 @@ export default function Calculator() {
         >
           <div
             style={{
-              width: "40px",
-              height: "40px",
+              width: "clamp(32px, 8vw, 40px)",
+              height: "clamp(32px, 8vw, 40px)",
               borderRadius: "10px",
               background: "#FEF0ED",
               display: "flex",
@@ -227,13 +238,13 @@ export default function Calculator() {
             <div
               style={{
                 fontFamily: "var(--font-dm-serif)",
-                fontSize: "22px",
+                fontSize: "clamp(18px, 4vw, 22px)",
                 color: "#2C1A17",
               }}
             >
               Calculatrice
             </div>
-            <div style={{ fontSize: "12px", color: "#B89490" }}>
+            <div style={{ fontSize: "clamp(10px, 2.5vw, 12px)", color: "#B89490" }}>
               Calculs simples et rapides
             </div>
           </div>
@@ -246,18 +257,18 @@ export default function Calculator() {
             background: "#FEF0ED",
             border: "1px solid #EDD9D5",
             borderRadius: "14px",
-            padding: "20px 24px",
-            marginBottom: "16px",
+            padding: "clamp(12px, 3vw, 20px) clamp(16px, 4vw, 24px)",
+            marginBottom: "clamp(12px, 3vw, 16px)",
             textAlign: "right",
           }}
         >
           <div
             style={{
               fontFamily: "var(--font-jetbrains-mono)",
-              fontSize: "13px",
+              fontSize: "clamp(11px, 2.5vw, 13px)",
               color: "#B89490",
-              minHeight: "18px",
-              marginBottom: "6px",
+              minHeight: "clamp(16px, 4vw, 18px)",
+              marginBottom: "clamp(4px, 1vw, 6px)",
             }}
           >
             {expression || " "}
@@ -265,7 +276,7 @@ export default function Calculator() {
           <div
             style={{
               fontFamily: "var(--font-jetbrains-mono)",
-              fontSize,
+              isMobile ? "clamp(20px, 6vw, 28px)" : fontSize,
               fontWeight: 500,
               color: "#2C1A17",
               letterSpacing: "-0.02em",
@@ -282,7 +293,7 @@ export default function Calculator() {
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(4, 1fr)",
-            gap: "8px",
+            gap: "clamp(6px, 1.5vw, 8px)",
           }}
         >
           <CalcKey label="AC" type="clr" onClick={handleClear} />
@@ -324,15 +335,18 @@ export default function Calculator() {
       </div>
 
       {/* History sidebar */}
-      <div style={{ paddingTop: "66px" }}>
+      <div style={{ 
+        paddingTop: isMobile ? "24px" : "66px", 
+        order: isMobile ? -1 : 0 
+      }}>
         <div
           style={{
-            fontSize: "11px",
+            fontSize: "clamp(10px, 2vw, 11px)",
             fontWeight: 600,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
             color: "#B89490",
-            marginBottom: "12px",
+            marginBottom: "clamp(8px, 2vw, 12px)",
             fontFamily: "var(--font-dm-sans)",
           }}
         >
@@ -342,10 +356,10 @@ export default function Calculator() {
         {history.length === 0 ? (
           <div
             style={{
-              fontSize: "13px",
+              fontSize: "clamp(12px, 3vw, 13px)",
               color: "#D4B8B4",
               textAlign: "center",
-              padding: "32px 0",
+              padding: "clamp(20px, 5vw, 32px) 0",
               fontFamily: "var(--font-dm-sans)",
             }}
           >
@@ -364,15 +378,15 @@ export default function Calculator() {
                 background: i === 0 ? "#FEF0ED" : "white",
                 border: "1px solid #EDD9D5",
                 borderRadius: "8px",
-                padding: "10px 14px",
-                marginBottom: "8px",
+                padding: "clamp(8px, 2vw, 10px) clamp(10px, 2.5vw, 14px)",
+                marginBottom: "clamp(6px, 1.5vw, 8px)",
                 cursor: "pointer",
               }}
             >
               <div
                 style={{
                   fontFamily: "var(--font-jetbrains-mono)",
-                  fontSize: "11px",
+                  fontSize: "clamp(10px, 2vw, 11px)",
                   color: "#B89490",
                   marginBottom: "2px",
                 }}
@@ -382,7 +396,7 @@ export default function Calculator() {
               <div
                 style={{
                   fontFamily: "var(--font-jetbrains-mono)",
-                  fontSize: "16px",
+                  fontSize: "clamp(14px, 3.5vw, 16px)",
                   fontWeight: 500,
                   color: "#2C1A17",
                 }}
@@ -400,9 +414,9 @@ export default function Calculator() {
               background: "none",
               border: "none",
               cursor: "pointer",
-              fontSize: "11px",
+              fontSize: "clamp(10px, 2vw, 11px)",
               color: "#B89490",
-              padding: "4px 0",
+              padding: "clamp(3px, 1vw, 4px) 0",
               fontFamily: "var(--font-dm-sans)",
             }}
           >
@@ -465,12 +479,12 @@ function CalcKey({
       onMouseLeave={() => setPressed(false)}
       style={{
         gridColumn: wide ? "span 2" : "span 1",
-        height: "58px",
+        height: "clamp(48px, 12vw, 58px)",
         ...styles[type],
         borderRadius: "10px",
         cursor: "pointer",
         fontFamily: "var(--font-dm-sans)",
-        fontSize: "16px",
+        fontSize: "clamp(14px, 3.5vw, 16px)",
         fontWeight: 500,
         transform: pressed ? "scale(0.93)" : "scale(1)",
         transition: "transform 80ms, box-shadow 150ms",

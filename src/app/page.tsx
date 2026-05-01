@@ -94,7 +94,7 @@ export default function Home() {
       {/* Hero */}
       <div
         style={{
-          padding: "64px 32px 52px",
+          padding: "clamp(40px, 8vw, 64px) var(--main-padding, 32px) clamp(32px, 6vw, 52px)",
           maxWidth: "1200px",
           margin: "0 auto",
           textAlign: "center",
@@ -105,7 +105,7 @@ export default function Home() {
             display: "inline-flex",
             alignItems: "center",
             fontFamily: "var(--font-dm-sans)",
-            fontSize: "11px",
+            fontSize: "clamp(10px, 2vw, 11px)",
             fontWeight: 600,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
@@ -113,7 +113,7 @@ export default function Home() {
             color: "#E07B72",
             borderRadius: "4px",
             padding: "3px 10px",
-            marginBottom: "22px",
+            marginBottom: "clamp(16px, 4vw, 22px)",
           }}
         >
           Outils en ligne
@@ -122,14 +122,14 @@ export default function Home() {
         <h1
           style={{
             fontFamily: "var(--font-dm-serif)",
-            fontSize: "clamp(38px, 5vw, 58px)",
+            fontSize: "clamp(28px, 6vw, 58px)",
             fontWeight: 400,
             lineHeight: 1.08,
             letterSpacing: "-0.02em",
             color: "#2C1A17",
-            marginBottom: "16px",
-            maxWidth: "560px",
-            margin: "0 auto 16px",
+            marginBottom: "clamp(12px, 3vw, 16px)",
+            maxWidth: "min(560px, 90vw)",
+            margin: "0 auto clamp(12px, 3vw, 16px)",
           }}
         >
           Outils simples,
@@ -142,11 +142,11 @@ export default function Home() {
         <p
           style={{
             fontFamily: "var(--font-dm-sans)",
-            fontSize: "16px",
+            fontSize: "clamp(14px, 3vw, 16px)",
             color: "#7A5550",
             lineHeight: 1.55,
-            maxWidth: "380px",
-            margin: "0 auto 36px",
+            maxWidth: "min(380px, 80vw)",
+            margin: "0 auto clamp(24px, 6vw, 36px)",
           }}
         >
           Tous vos outils du quotidien, disponibles en un clic.
@@ -156,15 +156,15 @@ export default function Home() {
       </div>
 
       {/* Tools section */}
-      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 32px" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 var(--main-padding, 32px)" }}>
         <div
           style={{
-            fontSize: "11px",
+            fontSize: "clamp(10px, 2vw, 11px)",
             fontWeight: 600,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
             color: "#B89490",
-            marginBottom: "16px",
+            marginBottom: "clamp(12px, 3vw, 16px)",
             fontFamily: "var(--font-dm-sans)",
           }}
         >
@@ -172,12 +172,16 @@ export default function Home() {
         </div>
       </div>
 
-      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 32px 96px" }}>
+      <div style={{ 
+        maxWidth: "1200px", 
+        margin: "0 auto", 
+        padding: "0 var(--main-padding, 32px) clamp(48px, 12vw, 96px)" 
+      }}>
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "16px",
+            gridTemplateColumns: "repeat(var(--card-grid-columns, 3), 1fr)",
+            gap: "clamp(12px, 3vw, 16px)",
           }}
         >
           {tools.map((tool) => (

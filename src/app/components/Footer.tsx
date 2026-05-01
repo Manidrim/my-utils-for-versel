@@ -5,20 +5,24 @@ export default function Footer() {
     <footer
       style={{
         borderTop: "1px solid #EDD9D5",
-        padding: "24px 32px",
+        padding: "clamp(16px, 4vw, 24px) var(--nav-padding, 32px)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
         background: "#FDF6F4",
         flexWrap: "wrap",
-        gap: "12px",
+        gap: "clamp(8px, 2vw, 12px)",
+        flexDirection: "column",
       }}
     >
       <span
         style={{
           fontFamily: "var(--font-dm-sans)",
-          fontSize: "12px",
+          fontSize: "clamp(10px, 2vw, 12px)",
           color: "#B89490",
+          textAlign: "center",
+          width: "100%",
+          order: 1,
         }}
       >
         © 2026 Toolbox — Outils simples, résultats clairs.
@@ -27,14 +31,17 @@ export default function Footer() {
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "16px",
+          gap: "clamp(12px, 3vw, 16px)",
           flexWrap: "wrap",
+          justifyContent: "center",
+          width: "100%",
+          order: 2,
         }}
       >
         <span
           style={{
             fontFamily: "var(--font-dm-sans)",
-            fontSize: "12px",
+            fontSize: "clamp(10px, 2vw, 12px)",
             color: "#B89490",
           }}
         >
@@ -47,9 +54,9 @@ export default function Footer() {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "5px",
+            gap: "clamp(4px, 1vw, 5px)",
             fontFamily: "var(--font-dm-sans)",
-            fontSize: "12px",
+            fontSize: "clamp(10px, 2vw, 12px)",
             color: "#B89490",
             textDecoration: "none",
             transition: "color 150ms",
@@ -74,7 +81,7 @@ export default function Footer() {
               border: "none",
               cursor: "pointer",
               fontFamily: "var(--font-dm-sans)",
-              fontSize: "12px",
+              fontSize: "clamp(10px, 2vw, 12px)",
               color: "#B89490",
               padding: 0,
               transition: "color 150ms",

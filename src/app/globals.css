@@ -18,3 +18,41 @@ body {
   color: var(--foreground);
   font-family: var(--font-dm-sans), system-ui, sans-serif;
 }
+
+/* Responsive breakpoints */
+@media (max-width: 768px) {
+  :root {
+    --nav-padding: 16px;
+    --main-padding: 16px;
+    --card-grid-columns: 1;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  :root {
+    --nav-padding: 24px;
+    --main-padding: 24px;
+    --card-grid-columns: 2;
+  }
+}
+
+@media (min-width: 1025px) {
+  :root {
+    --nav-padding: 32px;
+    --main-padding: 32px;
+    --card-grid-columns: 3;
+  }
+}
+
+/* Mobile-first responsive styles */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+  
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+}

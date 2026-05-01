@@ -26,7 +26,7 @@ export default function ToolCard({
     background: "white",
     border: "1px solid #EDD9D5",
     borderRadius: "12px",
-    padding: "24px",
+    padding: "clamp(16px, 4vw, 24px)",
     cursor: available && href ? "pointer" : "default",
     opacity: available ? 1 : 0.65,
     transform: hovered && available ? "translateY(-2px)" : "translateY(0)",
@@ -45,14 +45,14 @@ export default function ToolCard({
     <>
       <div
         style={{
-          width: "44px",
-          height: "44px",
+          width: "clamp(36px, 8vw, 44px)",
+          height: "clamp(36px, 8vw, 44px)",
           borderRadius: "11px",
           background: available ? "#FEF0ED" : "#F5EAE8",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          marginBottom: "14px",
+          marginBottom: "clamp(10px, 2.5vw, 14px)",
           color: available ? "#E07B72" : "#B89490",
         }}
       >
@@ -61,10 +61,10 @@ export default function ToolCard({
       <div
         style={{
           fontFamily: "var(--font-dm-sans)",
-          fontSize: "15px",
+          fontSize: "clamp(14px, 3.5vw, 15px)",
           fontWeight: 600,
           color: "#2C1A17",
-          marginBottom: "5px",
+          marginBottom: "clamp(4px, 1vw, 5px)",
         }}
       >
         {name}
@@ -72,10 +72,10 @@ export default function ToolCard({
       <div
         style={{
           fontFamily: "var(--font-dm-sans)",
-          fontSize: "13px",
+          fontSize: "clamp(12px, 3vw, 13px)",
           color: "#7A5550",
           lineHeight: 1.45,
-          marginBottom: "14px",
+          marginBottom: "clamp(10px, 2.5vw, 14px)",
         }}
       >
         {description}
@@ -85,7 +85,7 @@ export default function ToolCard({
           display: "inline-flex",
           alignItems: "center",
           fontFamily: "var(--font-dm-sans)",
-          fontSize: "10px",
+          fontSize: "clamp(9px, 2vw, 10px)",
           fontWeight: 600,
           letterSpacing: "0.07em",
           textTransform: "uppercase",

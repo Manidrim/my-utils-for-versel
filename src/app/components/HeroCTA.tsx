@@ -37,13 +37,13 @@ export default function HeroCTA() {
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: "8px",
+        gap: "clamp(6px, 1.5vw, 8px)",
         background: "#E07B72",
         color: "white",
         fontFamily: "var(--font-dm-sans)",
-        fontSize: "14px",
+        fontSize: "clamp(12px, 3vw, 14px)",
         fontWeight: 600,
-        padding: "11px 22px",
+        padding: "clamp(8px, 2vw, 11px) clamp(16px, 4vw, 22px)",
         borderRadius: "8px",
         textDecoration: "none",
         boxShadow: hovered
