@@ -47,8 +47,9 @@ const tools = [
     icon: <PercentIcon />,
     name: "Pourcentages",
     description: "Calcul de remises, taxes et variations",
-    tag: "Bientôt",
-    available: false,
+    tag: "Maths",
+    available: true,
+    href: "/percentage",
   },
   {
     id: "converter",
