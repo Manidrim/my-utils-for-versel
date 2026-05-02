@@ -149,3 +149,15 @@ jobs:
                 console.log('Could not create or add label:', e.message);
               }
             }
+
+            // Remove the 'question' label
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: 'question'
+              });
+            } catch (e) {
+              console.log('Could not remove question label:', e.message);
+            }
