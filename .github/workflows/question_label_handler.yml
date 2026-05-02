@@ -1,0 +1,100 @@
+name: Handle Question Label
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  check_and_ask:
+    if: github.event.label.name == 'question'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check issue description and ask questions
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const description = issue.body || '';
+            const title = issue.title || '';
+
+            // Check if description is empty or too short
+            const hasDescription = description.trim().length > 10;
+
+            // Prepare questions based on missing elements
+            const questions = [];
+            if (!hasDescription) {
+              questions.push("- **Description manquante** : Pouvez-vous décrire en détail le problème ou la fonctionnalité souhaitée ?");
+            }
+
+            // Always suggest acceptance criteria if not mentioned
+            if (!description.toLowerCase().includes("critère d'acceptation") && 
+                !description.toLowerCase().includes("acceptance criteria")) {
+              questions.push("- **Critères d'acceptation** : Quels sont les critères pour considérer cette issue comme résolue ?");
+            }
+
+            // Suggest scope clarification
+            questions.push("- **Périmètre** : Cette issue concerne-t-elle un composant spécifique, une page, ou une fonctionnalité globale ?");
+            questions.push("- **Priorité** : Quelle est la priorité de cette issue (ex: haute, moyenne, basse) ?");
+            questions.push("- **Contexte** : Y a-t-il un contexte particulier ou des dépendances à prendre en compte ?");
+
+            // Add additional helpful questions
+            questions.push("- **Exemples** : Avez-vous des exemples ou des références pour illustrer le comportement attendu ?");
+
+            // Prepare comment
+            const commentBody = `
+            🤔 **Clarification nécessaire pour cette question**
+
+            Merci d'avoir ouvert cette issue ! Pour mieux comprendre le périmètre et vous aider efficacement, pourriez-vous préciser :
+
+            ${questions.join('\n')}
+
+            ---
+            *Ce commentaire a été ajouté automatiquement car le label \`question\` a été appliqué.*
+            `;
+
+            // Post comment
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: commentBody
+            });
+
+            // Add needs-clarification label
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['needs-clarification']
+              });
+            } catch (error) {
+              // Label might already exist, try to create it first
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: 'needs-clarification',
+                  color: 'fbc900',
+                  description: 'Cette issue a besoin de clarifications'
+                });
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  labels: ['needs-clarification']
+                });
+              } catch (e) {
+                console.log('Could not create or add label:', e.message);
+              }
+            }
