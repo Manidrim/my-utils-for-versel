@@ -21,6 +21,7 @@ jobs:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         with:
           script: |
+            const fs = require('fs');
             const { data: issue } = await github.rest.issues.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -86,12 +87,13 @@ jobs:
               })
             });
 
+            let content;
             if (!mistralResponse.ok) {
               const error = await mistralResponse.text();
               console.error('Mistral API error:', error);
               const defaultTitle = title || 'Titre à définir';
               const defaultDesc = description || 'Description à ajouter';
-              const defaultContent = "### Questions pour clarifier :\n" +
+              content = "### Questions pour clarifier :\n" +
                 "- Description manquante : Pouvez-vous décrire en détail le problème ou la fonctionnalité souhaitée ?\n" +
                 "- Critères d'acceptation : Quels sont les critères pour considérer cette issue comme résolue ?\n" +
                 "- Périmètre : Cette issue concerne-t-elle un composant spécifique, une page, ou une fonctionnalité globale ?\n" +
@@ -108,19 +110,19 @@ jobs:
                 "- Le périmètre et les dépendances\n\n" +
                 "**Raison des modifications :**\n" +
                 "L'issue actuelle manque de détails pour une compréhension optimale.";
-              core.setOutput('content', JSON.stringify(defaultContent));
-              return;
+            } else {
+              const data = await mistralResponse.json();
+              content = data.choices[0].message.content;
             }
 
-            const data = await mistralResponse.json();
-            const content = data.choices[0].message.content;
-            core.setOutput('content', JSON.stringify(content));
+            fs.writeFileSync('/tmp/mistral_content.txt', content);
 
       - name: Post Mistral-generated content as comment
         uses: actions/github-script@v7
         with:
           script: |
-            const content = JSON.parse("${{ steps.mistral.outputs.content }}");
+            const fs = require('fs');
+            const content = fs.readFileSync('/tmp/mistral_content.txt', 'utf8');
             
             const commentBody = "Clarification nécessaire pour cette question\n\n" +
               "Merci d'avoir ouvert cette issue ! Voici une analyse et des suggestions générées par Mistral AI pour améliorer la clarté :\n\n" +
