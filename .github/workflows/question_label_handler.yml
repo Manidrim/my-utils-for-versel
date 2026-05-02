@@ -14,7 +14,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Call Mistral API to generate clarification questions
+      - name: Call Mistral API to generate clarification questions and rewrite proposal
         id: mistral
         uses: actions/github-script@v7
         env:
@@ -32,29 +32,53 @@ jobs:
 
             // Prepare the prompt for Mistral
             const prompt = `
-            Tu es un assistant technique qui aide à clarifier les issues GitHub.
+            Tu es un assistant technique qui aide à clarifier et améliorer les issues GitHub.
             
             **Contexte de l'issue :**
             - Titre: ${title}
             - Description: ${description}
             
             **Ta tâche :**
+            
+            **1. Questions de clarification (3-5 questions)**
             Analyse cette issue et propose **3 à 5 questions pertinentes** en français pour :
-            1. Clarifier le périmètre (qu'est-ce qui est inclus/exclu ?)
-            2. Définir les critères d'acceptation (quand l'issue sera-t-elle résolue ?)
-            3. Identifier les dépendances ou contraintes techniques
-            4. Préciser les attentes fonctionnelles
+            - Clarifier le périmètre (qu'est-ce qui est inclus/exclu ?)
+            - Définir les critères d'acceptation
+            - Identifier les dépendances ou contraintes techniques
+            - Préciser les attentes fonctionnelles
+            
+            **2. Proposition de réécriture**
+            Propose une **version améliorée** de l'issue avec :
+            - Un titre plus clair et descriptif
+            - Une description structurée (contexte, objectif, critères d'acceptation, notes techniques)
+            - Les éléments manquants que tu as identifiés
             
             **Format attendu :**
-            - Utilise des puces (-) pour chaque question.
-            - Sois concis mais précis.
-            - Adapte les questions au contexte de l'issue.
-            - Si la description est vide, demande une description détaillée.
             
-            **Exemple de sortie :**
-            - Quel est le comportement attendu pour cette fonctionnalité ?
-            - Quels sont les cas d'usage principaux à couvrir ?
-            - Y a-t-il des contraintes techniques à respecter ?
+            ---
+            ### 🔍 Questions pour clarifier :
+            - [Question 1]
+            - [Question 2]
+            - [Question 3]
+            
+            ### ✍️ Proposition de réécriture :
+            **Titre amélioré :** [Nouveau titre]
+            
+            **Description améliorée :**
+            [Nouvelle description structurée avec sections claires]
+            
+            **Éléments ajoutés pour une meilleure compréhension :**
+            - [Élément 1]
+            - [Élément 2]
+            
+            **Raison des modifications :**
+            [Explication brève de pourquoi ces changements améliorent la clarté]
+            
+            **Règles :**
+            - Réponds en français.
+            - Sois concis mais complet.
+            - Adapte le contenu au contexte technique de l'issue.
+            - Si la description est vide, propose une structure de base.
             `;
 
             // Call Mistral API
@@ -73,44 +97,60 @@ jobs:
                   }
                 ],
                 temperature: 0.7,
-                max_tokens: 500
+                max_tokens: 1000
               })
             });
 
             if (!mistralResponse.ok) {
               const error = await mistralResponse.text();
               console.error('Mistral API error:', error);
-              // Fallback to default questions if Mistral fails
-              const defaultQuestions = [
-                "- **Description manquante** : Pouvez-vous décrire en détail le problème ou la fonctionnalité souhaitée ?",
-                "- **Critères d'acceptation** : Quels sont les critères pour considérer cette issue comme résolue ?",
-                "- **Périmètre** : Cette issue concerne-t-elle un composant spécifique, une page, ou une fonctionnalité globale ?",
-                "- **Priorité** : Quelle est la priorité de cette issue (ex: haute, moyenne, basse) ?",
-                "- **Contexte** : Y a-t-il un contexte particulier ou des dépendances à prendre en compte ?"
-              ];
-              core.setOutput('questions', defaultQuestions.join('\n'));
+              // Fallback to default content if Mistral fails
+              const defaultContent = `
+              ### 🔍 Questions pour clarifier :
+              - **Description manquante** : Pouvez-vous décrire en détail le problème ou la fonctionnalité souhaitée ?
+              - **Critères d'acceptation** : Quels sont les critères pour considérer cette issue comme résolue ?
+              - **Périmètre** : Cette issue concerne-t-elle un composant spécifique, une page, ou une fonctionnalité globale ?
+              - **Priorité** : Quelle est la priorité de cette issue (ex: haute, moyenne, basse) ?
+              - **Contexte** : Y a-t-il un contexte particulier ou des dépendances à prendre en compte ?
+              
+              ### ✍️ Proposition de réécriture :
+              **Titre amélioré :** ${title || 'Titre à définir'}
+              
+              **Description améliorée :**
+              ${description || 'Description à ajouter'}
+              
+              **Éléments ajoutés pour une meilleure compréhension :**
+              - Un titre plus descriptif
+              - Une description détaillée
+              - Des critères d'acceptation clairs
+              - Le périmètre et les dépendances
+              
+              **Raison des modifications :**
+              L'issue actuelle manque de détails pour une compréhension optimale.
+              `;
+              core.setOutput('content', defaultContent);
               return;
             }
 
             const data = await mistralResponse.json();
-            const questions = data.choices[0].message.content;
-            core.setOutput('questions', questions);
+            const content = data.choices[0].message.content;
+            core.setOutput('content', content);
 
-      - name: Post Mistral-generated questions as comment
+      - name: Post Mistral-generated content as comment
         uses: actions/github-script@v7
         with:
           script: |
-            const questions = `${{ steps.mistral.outputs.questions }}`;
+            const content = `${{ steps.mistral.outputs.content }}`;
             
             const commentBody = `
             🤔 **Clarification nécessaire pour cette question**
 
-            Merci d'avoir ouvert cette issue ! Pour mieux comprendre le périmètre et vous aider efficacement, voici quelques questions générées par Mistral AI :
+            Merci d'avoir ouvert cette issue ! Voici une analyse et des suggestions générées par Mistral AI pour améliorer la clarté :
 
-            ${questions}
+            ${content}
 
             ---
-            *Ce commentaire a été ajouté automatiquement car le label \`question\` a été appliqué. Les questions ont été générées par [Mistral Small](https://mistral.ai/).*
+            *Ce commentaire a été ajouté automatiquement car le label \`question\` a été appliqué. Les questions et suggestions ont été générées par [Mistral Small](https://mistral.ai/).*
             `;
 
             // Post comment
