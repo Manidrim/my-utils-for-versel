@@ -167,3 +167,44 @@ jobs:
               issue_number: context.issue.number,
               body: '✅ Issue mise à jour avec la proposition de réécriture. Merci !'
             });
+
+            // Supprimer le label clarification-ok
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: 'clarification-ok'
+              });
+            } catch (e) {
+              console.log('Could not remove clarification-ok label:', e.message);
+            }
+
+            // Ajouter le label development
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['development']
+              });
+            } catch (e) {
+              // Si le label n'existe pas, le créer
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: 'development',
+                  color: '0075ca',
+                  description: 'Issue prête pour le développement'
+                });
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  labels: ['development']
+                });
+              } catch (e2) {
+                console.log('Could not create or add development label:', e2.message);
+              }
+            }
