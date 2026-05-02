@@ -1,0 +1,169 @@
+name: Handle Clarification OK Label
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  update_issue_from_comment:
+    if: github.event.label.name == 'clarification-ok'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      issues: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Find and process latest comment with rewrite proposal
+        id: process_comment
+        uses: actions/github-script@v7
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+        with:
+          script: |
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            // Trouver le dernier commentaire contenant "Proposition de réécriture"
+            const rewriteComments = comments.filter(c =>
+              c.body && c.body.includes('Proposition de réécriture')
+            );
+
+            let newTitle = '';
+            let newDescription = '';
+
+            if (rewriteComments.length > 0) {
+              // Prendre le plus récent
+              const latestComment = rewriteComments.sort((a, b) =>
+                new Date(b.created_at) - new Date(a.created_at)
+              )[0];
+
+              // Extraire le contenu après "Proposition de réécriture"
+              const proposalText = 'Proposition de réécriture';
+              const proposalIndex = latestComment.body.indexOf(proposalText);
+
+              if (proposalIndex !== -1) {
+                const contentAfter = latestComment.body.slice(proposalIndex + proposalText.length).trim();
+
+                // Extraire titre amélioré
+                const titleMatch = contentAfter.match(/Titre amélioré\s*:\s*([^\n]+)/i);
+                if (titleMatch) {
+                  newTitle = titleMatch[1].trim();
+                }
+
+                // Extraire description améliorée (tout le contenu après "Description améliorée :")
+                const descMatch = contentAfter.match(/Description améliorée\s*:\s*([\s\S]*)/i);
+                if (descMatch) {
+                  newDescription = descMatch[1].trim();
+                }
+              }
+            }
+
+            // Si pas de contenu trouvé, générer avec Mistral
+            if (!newTitle || !newDescription) {
+              console.log('No valid rewrite proposal found in comments, generating with Mistral...');
+              
+              const title = issue.title || '';
+              const description = issue.body || '';
+
+              const prompt = "Tu es un assistant technique. Analyse cette issue et extrais/améliore le titre et la description.\n\n" +
+                "**Issue actuelle :**\n" +
+                "- Titre: " + title + "\n" +
+                "- Description: " + description + "\n\n" +
+                "**Format attendu (en français) :**\n" +
+                "Titre amélioré : [nouveau titre clair]\n\n" +
+                "Description améliorée :\n" +
+                "[description structurée avec contexte, objectif, critères d'acceptation]\n\n" +
+                "**Règles :**\n" +
+                "- Sois concis et technique\n" +
+                "- Structure la description avec des sections claires\n" +
+                "- Conserve les informations importantes de l'original";
+
+              try {
+                const mistralResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + process.env.MISTRAL_API_KEY
+                  },
+                  body: JSON.stringify({
+                    model: 'mistral-small-latest',
+                    messages: [
+                      {
+                        role: 'user',
+                        content: prompt
+                      }
+                    ],
+                    temperature: 0.3,
+                    max_tokens: 1000
+                  })
+                });
+
+                if (mistralResponse.ok) {
+                  const data = await mistralResponse.json();
+                  const content = data.choices[0].message.content;
+                  
+                  // Extraire depuis la réponse Mistral
+                  const titleMatch = content.match(/Titre amélioré\s*:\s*([^\n]+)/i);
+                  if (titleMatch) {
+                    newTitle = titleMatch[1].trim();
+                  }
+                  
+                  const descMatch = content.match(/Description améliorée\s*:\s*([\s\S]*)/i);
+                  if (descMatch) {
+                    newDescription = descMatch[1].trim();
+                  }
+                }
+              } catch (error) {
+                console.error('Mistral API error:', error);
+              }
+            }
+
+            // Sauvegarder pour l'étape suivante
+            if (newTitle) {
+              core.setOutput('new_title', newTitle);
+            }
+            if (newDescription) {
+              core.setOutput('new_description', newDescription);
+            }
+
+      - name: Update issue with extracted content
+        if: steps.process_comment.outputs.new_title != '' || steps.process_comment.outputs.new_description != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const newTitle = '${{ steps.process_comment.outputs.new_title }}';
+            const newDescription = '${{ steps.process_comment.outputs.new_description }}';
+
+            const updatePayload = {};
+            if (newTitle) {
+              updatePayload.title = 'Titre amélioré : ' + newTitle;
+            }
+            if (newDescription) {
+              updatePayload.body = 'Description améliorée : ' + newDescription;
+            }
+
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              ...updatePayload
+            });
+
+            // Optionnel: ajouter un commentaire de confirmation
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '✅ Issue mise à jour avec la proposition de réécriture. Merci !'
+            });
