@@ -30,48 +30,48 @@ jobs:
             const title = issue.title || '';
             const description = issue.body || '';
 
-            const prompt = `Tu es un assistant technique qui aide à clarifier et améliorer les issues GitHub.` +
-              `\n\n**Contexte de l'issue :**` +
-              `\n- Titre: ${title}` +
-              `\n- Description: ${description}` +
-              `\n\n**Ta tâche :**` +
-              `\n\n1. Questions de clarification (3-5 questions)` +
-              `\nAnalyse cette issue et propose 3 à 5 questions pertinentes en français pour :` +
-              `\n- Clarifier le périmètre (qu'est-ce qui est inclus/exclu ?)` +
-              `\n- Définir les critères d'acceptation` +
-              `\n- Identifier les dépendances ou contraintes techniques` +
-              `\n- Préciser les attentes fonctionnelles` +
-              `\n\n2. Proposition de réécriture` +
-              `\nPropose une version améliorée de l'issue avec :` +
-              `\n- Un titre plus clair et descriptif` +
-              `\n- Une description structurée (contexte, objectif, critères d'acceptation, notes techniques)` +
-              `\n- Les éléments manquants que tu as identifiés` +
-              `\n\n**Format attendu :**` +
-              `\n\n---` +
-              `\n### Questions pour clarifier :` +
-              `\n- [Question 1]` +
-              `\n- [Question 2]` +
-              `\n- [Question 3]` +
-              `\n\n### Proposition de réécriture :` +
-              `\n**Titre amélioré :** [Nouveau titre]` +
-              `\n\n**Description améliorée :**` +
-              `\n[Nouvelle description structurée avec sections claires]` +
-              `\n\n**Éléments ajoutés pour une meilleure compréhension :**` +
-              `\n- [Élément 1]` +
-              `\n- [Élément 2]` +
-              `\n\n**Raison des modifications :**` +
-              `\n[Explication brève de pourquoi ces changements améliorent la clarté]` +
-              `\n\n**Règles :**` +
-              `\n- Réponds en français.` +
-              `\n- Sois concis mais complet.` +
-              `\n- Adapte le contenu au contexte technique de l'issue.` +
-              `\n- Si la description est vide, propose une structure de base.`;
+            const prompt = "Tu es un assistant technique qui aide à clarifier et améliorer les issues GitHub.\n\n" +
+              "**Contexte de l'issue :**\n" +
+              "- Titre: " + title + "\n" +
+              "- Description: " + description + "\n\n" +
+              "**Ta tâche :**\n\n" +
+              "1. Questions de clarification (3-5 questions)\n" +
+              "Analyse cette issue et propose 3 à 5 questions pertinentes en français pour :\n" +
+              "- Clarifier le périmètre (qu'est-ce qui est inclus/exclu ?)\n" +
+              "- Définir les critères d'acceptation\n" +
+              "- Identifier les dépendances ou contraintes techniques\n" +
+              "- Préciser les attentes fonctionnelles\n\n" +
+              "2. Proposition de réécriture\n" +
+              "Propose une version améliorée de l'issue avec :\n" +
+              "- Un titre plus clair et descriptif\n" +
+              "- Une description structurée (contexte, objectif, critères d'acceptation, notes techniques)\n" +
+              "- Les éléments manquants que tu as identifiés\n\n" +
+              "**Format attendu :**\n\n" +
+              "---\n" +
+              "### Questions pour clarifier :\n" +
+              "- [Question 1]\n" +
+              "- [Question 2]\n" +
+              "- [Question 3]\n\n" +
+              "### Proposition de réécriture :\n" +
+              "**Titre amélioré :** [Nouveau titre]\n\n" +
+              "**Description améliorée :**\n" +
+              "[Nouvelle description structurée avec sections claires]\n\n" +
+              "**Éléments ajoutés pour une meilleure compréhension :**\n" +
+              "- [Élément 1]\n" +
+              "- [Élément 2]\n\n" +
+              "**Raison des modifications :**\n" +
+              "[Explication brève de pourquoi ces changements améliorent la clarté]\n\n" +
+              "**Règles :**\n" +
+              "- Réponds en français.\n" +
+              "- Sois concis mais complet.\n" +
+              "- Adapte le contenu au contexte technique de l'issue.\n" +
+              "- Si la description est vide, propose une structure de base.";
 
             const mistralResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.MISTRAL_API_KEY}`
+                'Authorization': 'Bearer ' + process.env.MISTRAL_API_KEY
               },
               body: JSON.stringify({
                 model: 'mistral-small-latest',
@@ -89,27 +89,25 @@ jobs:
             if (!mistralResponse.ok) {
               const error = await mistralResponse.text();
               console.error('Mistral API error:', error);
-              const defaultContent = `### Questions pour clarifier :
-- Description manquante : Pouvez-vous décrire en détail le problème ou la fonctionnalité souhaitée ?
-- Critères d'acceptation : Quels sont les critères pour considérer cette issue comme résolue ?
-- Périmètre : Cette issue concerne-t-elle un composant spécifique, une page, ou une fonctionnalité globale ?
-- Priorité : Quelle est la priorité de cette issue (ex: haute, moyenne, basse) ?
-- Contexte : Y a-t-il un contexte particulier ou des dépendances à prendre en compte ?
-
-### Proposition de réécriture :
-**Titre amélioré :** ${title || 'Titre à définir'}
-
-**Description améliorée :**
-${description || 'Description à ajouter'}
-
-**Éléments ajoutés pour une meilleure compréhension :**
-- Un titre plus descriptif
-- Une description détaillée
-- Des critères d'acceptation clairs
-- Le périmètre et les dépendances
-
-**Raison des modifications :**
-L'issue actuelle manque de détails pour une compréhension optimale.`;
+              const defaultTitle = title || 'Titre à définir';
+              const defaultDesc = description || 'Description à ajouter';
+              const defaultContent = "### Questions pour clarifier :\n" +
+                "- Description manquante : Pouvez-vous décrire en détail le problème ou la fonctionnalité souhaitée ?\n" +
+                "- Critères d'acceptation : Quels sont les critères pour considérer cette issue comme résolue ?\n" +
+                "- Périmètre : Cette issue concerne-t-elle un composant spécifique, une page, ou une fonctionnalité globale ?\n" +
+                "- Priorité : Quelle est la priorité de cette issue (ex: haute, moyenne, basse) ?\n" +
+                "- Contexte : Y a-t-il un contexte particulier ou des dépendances à prendre en compte ?\n\n" +
+                "### Proposition de réécriture :\n" +
+                "**Titre amélioré :** " + defaultTitle + "\n\n" +
+                "**Description améliorée :**\n" +
+                defaultDesc + "\n\n" +
+                "**Éléments ajoutés pour une meilleure compréhension :**\n" +
+                "- Un titre plus descriptif\n" +
+                "- Une description détaillée\n" +
+                "- Des critères d'acceptation clairs\n" +
+                "- Le périmètre et les dépendances\n\n" +
+                "**Raison des modifications :**\n" +
+                "L'issue actuelle manque de détails pour une compréhension optimale.";
               core.setOutput('content', defaultContent);
               return;
             }
@@ -122,16 +120,14 @@ L'issue actuelle manque de détails pour une compréhension optimale.`;
         uses: actions/github-script@v7
         with:
           script: |
-            const content = `${{ steps.mistral.outputs.content }}`;
+            const content = "${{ steps.mistral.outputs.content }}";
             
-            const commentBody = `Clarification nécessaire pour cette question
-
-Merci d'avoir ouvert cette issue ! Voici une analyse et des suggestions générées par Mistral AI pour améliorer la clarté :
-
-${content}
-
----
-Ce commentaire a été ajouté automatiquement car le label 'question' a été appliqué. Les questions et suggestions ont été générées par Mistral Small.`;
+            const commentBody = "Clarification nécessaire pour cette question\n\n" +
+              "Merci d'avoir ouvert cette issue ! Voici une analyse et des suggestions générées par Mistral AI pour améliorer la clarté :\n\n" +
+              content + "\n\n" +
+              "---\n" +
+              "Ce commentaire a été ajouté automatiquement car le label 'question' a été appliqué. " +
+              "Les questions et suggestions ont été générées par Mistral Small.";
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
