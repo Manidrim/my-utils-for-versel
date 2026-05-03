@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       issues: write
-      issues: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,6 +21,7 @@ jobs:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         with:
           script: |
+            const core = require('@actions/core');
             const { data: issue } = await github.rest.issues.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -34,6 +34,9 @@ jobs:
               issue_number: context.issue.number
             });
 
+            console.log('Processing issue:', context.issue.number);
+            console.log('Number of comments:', comments.length);
+
             // Trouver le dernier commentaire contenant "Proposition de réécriture"
             const rewriteComments = comments.filter(c =>
               c.body && c.body.includes('Proposition de réécriture')
@@ -43,6 +46,7 @@ jobs:
             let newDescription = '';
 
             if (rewriteComments.length > 0) {
+              console.log('Found rewrite comments:', rewriteComments.length);
               // Prendre le plus récent
               const latestComment = rewriteComments.sort((a, b) =>
                 new Date(b.created_at) - new Date(a.created_at)
@@ -59,12 +63,14 @@ jobs:
                 const titleMatch = contentAfter.match(/Titre amélioré\s*:\s*([^\n]+)/i);
                 if (titleMatch) {
                   newTitle = titleMatch[1].trim();
+                  console.log('Extracted title:', newTitle);
                 }
 
-                // Extraire description améliorée (tout le contenu après "Description améliorée :")
+                // Extraire description améliorée
                 const descMatch = contentAfter.match(/Description améliorée\s*:\s*([\s\S]*)/i);
                 if (descMatch) {
                   newDescription = descMatch[1].trim();
+                  console.log('Extracted description length:', newDescription.length);
                 }
               }
             }
@@ -112,17 +118,22 @@ jobs:
                 if (mistralResponse.ok) {
                   const data = await mistralResponse.json();
                   const content = data.choices[0].message.content;
+                  console.log('Mistral response received');
                   
                   // Extraire depuis la réponse Mistral
                   const titleMatch = content.match(/Titre amélioré\s*:\s*([^\n]+)/i);
                   if (titleMatch) {
                     newTitle = titleMatch[1].trim();
+                    console.log('Mistral title:', newTitle);
                   }
                   
                   const descMatch = content.match(/Description améliorée\s*:\s*([\s\S]*)/i);
                   if (descMatch) {
                     newDescription = descMatch[1].trim();
+                    console.log('Mistral description length:', newDescription.length);
                   }
+                } else {
+                  console.error('Mistral API error:', mistralResponse.status);
                 }
               } catch (error) {
                 console.error('Mistral API error:', error);
@@ -136,6 +147,7 @@ jobs:
             if (newDescription) {
               core.setOutput('new_description', newDescription);
             }
+            console.log('Outputs set - title:', newTitle, 'description:', newDescription);
 
       - name: Update issue with extracted content
         if: steps.process_comment.outputs.new_title != '' || steps.process_comment.outputs.new_description != ''
@@ -145,28 +157,32 @@ jobs:
             const newTitle = '${{ steps.process_comment.outputs.new_title }}';
             const newDescription = '${{ steps.process_comment.outputs.new_description }}';
 
+            console.log('Updating issue with title:', newTitle, 'description:', newDescription);
+
             const updatePayload = {};
             if (newTitle) {
-              updatePayload.title = 'Titre amélioré : ' + newTitle;
+              updatePayload.title = newTitle;
             }
             if (newDescription) {
-              updatePayload.body = 'Description améliorée : ' + newDescription;
+              updatePayload.body = newDescription;
             }
 
-            await github.rest.issues.update({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              ...updatePayload
-            });
+            if (Object.keys(updatePayload).length > 0) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                ...updatePayload
+              });
 
-            // Optionnel: ajouter un commentaire de confirmation
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: '✅ Issue mise à jour avec la proposition de réécriture. Merci !'
-            });
+              // Ajouter un commentaire de confirmation
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: '✅ Issue mise à jour avec la proposition de réécriture. Merci !'
+              });
+            }
 
             // Supprimer le label clarification-ok
             try {
@@ -176,6 +192,7 @@ jobs:
                 issue_number: context.issue.number,
                 name: 'clarification-ok'
               });
+              console.log('Removed clarification-ok label');
             } catch (e) {
               console.log('Could not remove clarification-ok label:', e.message);
             }
@@ -188,6 +205,7 @@ jobs:
                 issue_number: context.issue.number,
                 labels: ['development']
               });
+              console.log('Added development label');
             } catch (e) {
               // Si le label n'existe pas, le créer
               try {
@@ -204,6 +222,7 @@ jobs:
                   issue_number: context.issue.number,
                   labels: ['development']
                 });
+                console.log('Created and added development label');
               } catch (e2) {
                 console.log('Could not create or add development label:', e2.message);
               }
