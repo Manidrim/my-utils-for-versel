@@ -62,18 +62,32 @@ jobs:
               // ---
               // [Description]
               // ---
-              // Extraire le titre (peut être sur la même ligne ou la ligne suivante)
+              // Extraire le titre (ignorer tout avant le label)
               const titleMatch = latestComment.body.match(/\*\*Titre amélioré\*\*\s*:\s*([^\n*]+)/i);
               if (titleMatch) {
                 newTitle = titleMatch[1].trim();
                 console.log('Extracted title:', newTitle);
+              } else {
+                console.log('Title regex failed. Trying alternative...');
+                const titleMatchAlt = latestComment.body.match(/Titre amélioré\s*:\s*([^\n*]+)/i);
+                if (titleMatchAlt) {
+                  newTitle = titleMatchAlt[1].trim();
+                  console.log('Extracted title (alt):', newTitle);
+                }
               }
 
-              // Match la description entre --- (peut être sur la même ligne ou la suivante)
+              // Match la description entre --- (ignorer tout avant le label)
               const descMatch = latestComment.body.match(/\*\*Description améliorée\*\*\s*:[^\n]*\n\s*---\s*\n([\s\S]+?)---\s*/i);
               if (descMatch) {
                 newDescription = descMatch[1].trim();
                 console.log('Extracted description length:', newDescription.length);
+              } else {
+                console.log('Description regex failed. Trying alternative...');
+                const descMatchAlt = latestComment.body.match(/Description améliorée\s*:[^\n]*\n\s*---\s*\n([\s\S]+?)---\s*/i);
+                if (descMatchAlt) {
+                  newDescription = descMatchAlt[1].trim();
+                  console.log('Extracted description (alt) length:', newDescription.length);
+                }
               }
             }
 
