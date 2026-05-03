@@ -48,7 +48,6 @@ jobs:
               "- Une description structurée (contexte, objectif, critères d'acceptation, notes techniques)\n" +
               "- Les éléments manquants que tu as identifiés\n\n" +
               "**Format attendu :**\n\n" +
-              "---\n" +
               "### Questions pour clarifier :\n" +
               "- [Question 1]\n" +
               "- [Question 2]\n" +
@@ -56,7 +55,13 @@ jobs:
               "### Proposition de réécriture :\n" +
               "**Titre amélioré :** [Nouveau titre]\n\n" +
               "**Description améliorée :**\n" +
-              "[Nouvelle description structurée avec sections claires]\n\n" +
+              "---\n" +
+              "[Nouvelle description structurée avec sections claires :\n" +
+              "- Contexte\n" +
+              "- Objectif\n" +
+              "- Critères d'acceptation\n" +
+              "- Notes techniques]\n" +
+              "---\n\n" +
               "**Éléments ajoutés pour une meilleure compréhension :**\n" +
               "- [Élément 1]\n" +
               "- [Élément 2]\n\n" +
@@ -66,7 +71,8 @@ jobs:
               "- Réponds en français.\n" +
               "- Sois concis mais complet.\n" +
               "- Adapte le contenu au contexte technique de l'issue.\n" +
-              "- Si la description est vide, propose une structure de base.";
+              "- Si la description est vide, propose une structure de base.\n" +
+              "- Utilise le format avec --- pour la description améliorée.";
 
             const mistralResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
               method: 'POST',
@@ -102,7 +108,9 @@ jobs:
                 "### Proposition de réécriture :\n" +
                 "**Titre amélioré :** " + defaultTitle + "\n\n" +
                 "**Description améliorée :**\n" +
-                defaultDesc + "\n\n" +
+                "---\n" +
+                defaultDesc + "\n" +
+                "---\n\n" +
                 "**Éléments ajoutés pour une meilleure compréhension :**\n" +
                 "- Un titre plus descriptif\n" +
                 "- Une description détaillée\n" +

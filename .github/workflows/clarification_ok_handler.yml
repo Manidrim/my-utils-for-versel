@@ -51,32 +51,23 @@ jobs:
                 new Date(b.created_at) - new Date(a.created_at)
               )[0];
 
-              // Extraire le contenu après "Proposition de réécriture"
-              const proposalText = 'Proposition de réécriture';
-              const proposalIndex = latestComment.body.indexOf(proposalText);
+              // Extraire le titre et la description au format standardisé avec ---
+              // Format attendu:
+              // **Titre amélioré :** [Titre]
+              // **Description améliorée :**
+              // ---
+              // [Description]
+              // ---
+              const titleMatch = latestComment.body.match(/\*\*Titre amélioré\*\*\s*:\s*(.+?)(?=\n)/i);
+              if (titleMatch) {
+                newTitle = titleMatch[1].trim().replace(/^\*\*|\*\*$/g, '').trim();
+                console.log('Extracted title:', newTitle);
+              }
 
-              if (proposalIndex !== -1) {
-                const contentAfter = latestComment.body.slice(proposalIndex + proposalText.length).trim();
-
-                // Extraire titre amélioré (ignorer les ** autour du label et du contenu)
-                const titleMatch = contentAfter.match(/\*\*Titre amélioré\*\*\s*:\s*\*\*(.+?)\*\*/i) || 
-                                   contentAfter.match(/Titre amélioré\s*:\s*\*\*(.+?)\*\*/i) ||
-                                   contentAfter.match(/\*\*Titre amélioré\*\*\s*:\s*(.+?)(?=\n)/i) ||
-                                   contentAfter.match(/Titre amélioré\s*:\s*(.+?)(?=\n)/i);
-                if (titleMatch) {
-                  newTitle = titleMatch[1].trim().replace(/^\*\*|\*\*$/g, '').trim();
-                  console.log('Extracted title:', newTitle);
-                }
-
-                // Extraire description améliorée (ignorer les ** autour du label et du contenu)
-                const descMatch = contentAfter.match(/\*\*Description améliorée\*\*\s*:\s*\*\*([\s\S]+?)\*\*/i) ||
-                                   contentAfter.match(/Description améliorée\s*:\s*\*\*([\s\S]+?)\*\*/i) ||
-                                   contentAfter.match(/\*\*Description améliorée\*\*\s*:\s*([\s\S]+?)(?=\n\*\*|\n\n|\Z)/i) ||
-                                   contentAfter.match(/Description améliorée\s*:\s*([\s\S]+?)(?=\n\n|\Z)/i);
-                if (descMatch) {
-                  newDescription = descMatch[1].trim().replace(/^\*\*|\*\*$/g, '').trim();
-                  console.log('Extracted description length:', newDescription.length);
-                }
+              const descMatch = latestComment.body.match(/\*\*Description améliorée\*\*\s*:[^\n]*\n---\n([\s\S]+?)---/i);
+              if (descMatch) {
+                newDescription = descMatch[1].trim();
+                console.log('Extracted description length:', newDescription.length);
               }
             }
 
@@ -87,18 +78,27 @@ jobs:
               const title = issue.title || '';
               const description = issue.body || '';
 
-              const prompt = "Tu es un assistant technique. Analyse cette issue et extrais/améliore le titre et la description.\n\n" +
+              // Prompt pour générer une proposition au format standardisé avec ---
+              const prompt = "Tu es un assistant technique. Analyse cette issue et propose une réécriture au format suivant :\n\n" +
                 "**Issue actuelle :**\n" +
                 "- Titre: " + title + "\n" +
                 "- Description: " + description + "\n\n" +
                 "**Format attendu (en français) :**\n" +
-                "Titre amélioré : [nouveau titre clair]\n\n" +
-                "Description améliorée :\n" +
-                "[description structurée avec contexte, objectif, critères d'acceptation]\n\n" +
+                "### Proposition de réécriture :\n" +
+                "**Titre amélioré :** [nouveau titre clair et concis]\n\n" +
+                "**Description améliorée :**\n" +
+                "---\n" +
+                "[Description structurée avec :\n" +
+                "- Contexte\n" +
+                "- Objectif\n" +
+                "- Critères d'acceptation\n" +
+                "- Notes techniques (si applicable)]\n" +
+                "---\n\n" +
                 "**Règles :**\n" +
                 "- Sois concis et technique\n" +
-                "- Structure la description avec des sections claires\n" +
-                "- Conserve les informations importantes de l'original";
+                "- Utilise des sections claires (### ou **)\n" +
+                "- Conserve les informations importantes de l'original\n" +
+                "- Réponds UNIQUEMENT avec le bloc ci-dessus, sans autre texte.";
 
               try {
                 const mistralResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
@@ -125,14 +125,14 @@ jobs:
                   const content = data.choices[0].message.content;
                   console.log('Mistral response received');
                   
-                  // Extraire depuis la réponse Mistral (éviter les matches sur **)
-                  const titleMatch = content.match(/Titre amélioré\s*:\s*([^\n*]+)/i);
+                  // Extraire le titre et la description au format standardisé
+                  const titleMatch = content.match(/\*\*Titre amélioré\*\*\s*:\s*(.+?)(?=\n)/i);
                   if (titleMatch) {
-                    newTitle = titleMatch[1].trim();
+                    newTitle = titleMatch[1].trim().replace(/^\*\*|\*\*$/g, '').trim();
                     console.log('Mistral title:', newTitle);
                   }
                   
-                  const descMatch = content.match(/Description améliorée\s*:\s*([\s\S]+?)(?=\n\n|\n\*|\Z)/i);
+                  const descMatch = content.match(/\*\*Description améliorée\*\*\s*:[^\n]*\n---\n([\s\S]+?)---/i);
                   if (descMatch) {
                     newDescription = descMatch[1].trim();
                     console.log('Mistral description length:', newDescription.length);
