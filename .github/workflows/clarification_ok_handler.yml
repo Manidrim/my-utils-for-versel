@@ -181,13 +181,14 @@ jobs:
               console.log('Mistral API key not configured, skipping generation');
             }
 
-            // Nettoyer et sauvegarder pour l'étape suivante (échapper les caractères spéciaux)
+            // Nettoyer et sauvegarder pour l'étape suivante (conserver les sauts de ligne, échapper les caractères spéciaux)
             if (newTitle) {
-              const cleanTitle = newTitle.replace(/\n/g, ' ').replace(/\r/g, ' ').replace(/'/g, "\\'").trim();
+              const cleanTitle = newTitle.replace(/\r/g, '').replace(/'/g, "\\'").replace(/\n/g, ' ').trim();
               core.setOutput('new_title', cleanTitle);
             }
             if (newDescription) {
-              const cleanDesc = newDescription.replace(/\n/g, ' ').replace(/\r/g, ' ').replace(/'/g, "\\'").trim();
+              // Conserver les sauts de ligne pour le formatage, mais échapper les ' et " et les retours chariot
+              const cleanDesc = newDescription.replace(/\r/g, '').replace(/'/g, "\\'").replace(/\"/g, '\\"');
               core.setOutput('new_description', cleanDesc);
             }
             console.log('Outputs set - title:', newTitle, 'description length:', newDescription ? newDescription.length : 0);
@@ -198,7 +199,7 @@ jobs:
         with:
           script: |
             const newTitle = '${{ steps.process_comment.outputs.new_title }}'.trim();
-            const newDescription = '${{ steps.process_comment.outputs.new_description }}'.trim();
+            const newDescription = '${{ steps.process_comment.outputs.new_description }}';
 
             console.log('Updating issue with title:', newTitle, 'description length:', newDescription.length);
 
