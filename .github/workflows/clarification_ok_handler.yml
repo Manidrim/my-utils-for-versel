@@ -68,7 +68,7 @@ jobs:
                 const afterTitleLabel = latestComment.body.slice(titleLabelIndex + '**Titre amélioré :**'.length).trim();
                 const titleEndIndex = afterTitleLabel.indexOf('\n');
                 if (titleEndIndex !== -1) {
-                  newTitle = afterTitleLabel.slice(0, titleEndIndex).trim();
+                  newTitle = afterTitleLabel.slice(0, titleEndIndex).trim().replace(/^\*|\*$/g, '').trim();
                   console.log('Extracted title:', newTitle);
                 }
               } else {
@@ -153,7 +153,7 @@ jobs:
                     const afterTitleLabel = content.slice(titleLabelIndex + '**Titre amélioré :**'.length).trim();
                     const titleEndIndex = afterTitleLabel.indexOf('\n');
                     if (titleEndIndex !== -1) {
-                      newTitle = afterTitleLabel.slice(0, titleEndIndex).trim();
+                      newTitle = afterTitleLabel.slice(0, titleEndIndex).trim().replace(/^\*|\*$/g, '').trim();
                       console.log('Mistral title:', newTitle);
                     }
                   }
