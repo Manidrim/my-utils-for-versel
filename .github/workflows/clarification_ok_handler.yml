@@ -58,10 +58,17 @@ jobs:
               // ---
               // [Description]
               // ---
-              const titleMatch = latestComment.body.match(/\*\*Titre amélioré\*\*\s*:\s*\n([^\n]+)/i);
+              const titleMatch = latestComment.body.match(/\*\*Titre amélioré\*\*\s*:\s*\n([^\n*]+)/i);
               if (titleMatch) {
-                newTitle = titleMatch[1].trim().replace(/^\*\*|\*\*$/g, '').trim();
+                newTitle = titleMatch[1].trim();
                 console.log('Extracted title:', newTitle);
+              } else {
+                // Fallback : essayer sans le saut de ligne strict
+                const titleMatchFallback = latestComment.body.match(/\*\*Titre amélioré\*\*\s*:\s*\n?\s*([^\n*]+)/i);
+                if (titleMatchFallback) {
+                  newTitle = titleMatchFallback[1].trim();
+                  console.log('Extracted title (fallback):', newTitle);
+                }
               }
 
               // Match la description entre --- (avec sauts de ligne flexibles)
@@ -69,6 +76,13 @@ jobs:
               if (descMatch) {
                 newDescription = descMatch[1].trim();
                 console.log('Extracted description length:', newDescription.length);
+              } else {
+                // Essayer sans le $ (fin de chaîne) au cas où il y a des espaces après ---
+                const descMatchFallback = latestComment.body.match(/\*\*Description améliorée\*\*\s*:[^\n]*\n\s*---\s*\n([\s\S]+?)---\s*/i);
+                if (descMatchFallback) {
+                  newDescription = descMatchFallback[1].trim();
+                  console.log('Extracted description (fallback) length:', newDescription.length);
+                }
               }
             }
 
