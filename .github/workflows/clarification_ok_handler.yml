@@ -147,14 +147,16 @@ jobs:
               console.log('Mistral API key not configured, skipping generation');
             }
 
-            // Sauvegarder pour l'étape suivante
+            // Nettoyer et sauvegarder pour l'étape suivante
             if (newTitle) {
-              core.setOutput('new_title', newTitle);
+              const cleanTitle = newTitle.replace(/\n/g, ' ').replace(/\r/g, ' ').trim();
+              core.setOutput('new_title', cleanTitle);
             }
             if (newDescription) {
-              core.setOutput('new_description', newDescription);
+              const cleanDesc = newDescription.replace(/\n/g, ' ').replace(/\r/g, ' ').trim();
+              core.setOutput('new_description', cleanDesc);
             }
-            console.log('Outputs set - title:', newTitle, 'description:', newDescription);
+            console.log('Outputs set - title:', newTitle, 'description length:', newDescription ? newDescription.length : 0);
 
       - name: Update issue with extracted content
         if: steps.process_comment.outputs.new_title != '' || steps.process_comment.outputs.new_description != ''
