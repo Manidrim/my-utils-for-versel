@@ -74,8 +74,8 @@ jobs:
               }
             }
 
-            // Si pas de contenu trouvé, générer avec Mistral
-            if (!newTitle || !newDescription) {
+            // Si pas de contenu trouvé, générer avec Mistral (uniquement si la clé API est disponible)
+            if ((!newTitle || !newDescription) && process.env.MISTRAL_API_KEY) {
               console.log('No valid rewrite proposal found in comments, generating with Mistral...');
               
               const title = issue.title || '';
@@ -119,14 +119,14 @@ jobs:
                   const content = data.choices[0].message.content;
                   console.log('Mistral response received');
                   
-                  // Extraire depuis la réponse Mistral
-                  const titleMatch = content.match(/Titre amélioré\s*:\s*([^\n]+)/i);
+                  // Extraire depuis la réponse Mistral (éviter les matches sur **)
+                  const titleMatch = content.match(/Titre amélioré\s*:\s*([^\n*]+)/i);
                   if (titleMatch) {
                     newTitle = titleMatch[1].trim();
                     console.log('Mistral title:', newTitle);
                   }
                   
-                  const descMatch = content.match(/Description améliorée\s*:\s*([\s\S]*)/i);
+                  const descMatch = content.match(/Description améliorée\s*:\s*([\s\S]+?)(?=\n\n|\n\*|\Z)/i);
                   if (descMatch) {
                     newDescription = descMatch[1].trim();
                     console.log('Mistral description length:', newDescription.length);
@@ -137,6 +137,8 @@ jobs:
               } catch (error) {
                 console.error('Mistral API error:', error);
               }
+            } else if (!process.env.MISTRAL_API_KEY) {
+              console.log('Mistral API key not configured, skipping generation');
             }
 
             // Sauvegarder pour l'étape suivante
