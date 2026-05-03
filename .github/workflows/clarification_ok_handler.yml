@@ -36,10 +36,14 @@ jobs:
             console.log('Processing issue:', context.issue.number);
             console.log('Number of comments:', comments.length);
 
-            // Trouver le dernier commentaire contenant "Proposition de réécriture"
+            // Trouver le dernier commentaire contenant "Proposition de réécriture" (avec ou sans ###)
             const rewriteComments = comments.filter(c =>
               c.body && c.body.includes('Proposition de réécriture')
             );
+            console.log('Rewrite comments found:', rewriteComments.length);
+            if (rewriteComments.length > 0) {
+              console.log('Latest comment body preview:', rewriteComments[0].body.substring(0, 200));
+            }
 
             let newTitle = '';
             let newDescription = '';
