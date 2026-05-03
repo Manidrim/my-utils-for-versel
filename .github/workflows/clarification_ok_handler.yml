@@ -58,15 +58,17 @@ jobs:
               if (proposalIndex !== -1) {
                 const contentAfter = latestComment.body.slice(proposalIndex + proposalText.length).trim();
 
-                // Extraire titre amélioré (éviter les matches sur **)
-                const titleMatch = contentAfter.match(/Titre amélioré\s*:\s*([^\n*]+)/i);
+                // Extraire titre amélioré (ignorer les ** autour du label)
+                const titleMatch = contentAfter.match(/\*\*Titre amélioré\*\*\s*:\s*([^\n]+)/i) || 
+                                   contentAfter.match(/Titre amélioré\s*:\s*([^\n]+)/i);
                 if (titleMatch) {
                   newTitle = titleMatch[1].trim();
                   console.log('Extracted title:', newTitle);
                 }
 
-                // Extraire description améliorée (éviter les matches sur **)
-                const descMatch = contentAfter.match(/Description améliorée\s*:\s*([\s\S]+?)(?=\n\n|\n\*|\Z)/i);
+                // Extraire description améliorée (ignorer les ** autour du label)
+                const descMatch = contentAfter.match(/\*\*Description améliorée\*\*\s*:\s*([\s\S]+?)(?=\n\*\*|\n\n|\Z)/i) ||
+                                   contentAfter.match(/Description améliorée\s*:\s*([\s\S]+?)(?=\n\n|\Z)/i);
                 if (descMatch) {
                   newDescription = descMatch[1].trim();
                   console.log('Extracted description length:', newDescription.length);
