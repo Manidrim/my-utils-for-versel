@@ -62,22 +62,34 @@ jobs:
               // ---
               // [Description]
               // ---
-              // Extraire le titre (ignorer tout avant le label, avec ou sans **)
-              const titleMatch = latestComment.body.match(/[\s\S]*?(\*\*)?Titre amélioré(\*\*)?\s*:\s*([^\n*]+)/i);
-              if (titleMatch) {
-                newTitle = titleMatch[3].trim();
-                console.log('Extracted title:', newTitle);
+              // Extraire le titre (trouver le label et prendre le texte après :)
+              const titleLabelIndex = latestComment.body.indexOf('**Titre amélioré :**');
+              if (titleLabelIndex !== -1) {
+                const afterTitleLabel = latestComment.body.slice(titleLabelIndex + '**Titre amélioré :**'.length).trim();
+                const titleEndIndex = afterTitleLabel.indexOf('\n');
+                if (titleEndIndex !== -1) {
+                  newTitle = afterTitleLabel.slice(0, titleEndIndex).trim();
+                  console.log('Extracted title:', newTitle);
+                }
               } else {
-                console.log('Title regex failed. No match found.');
+                console.log('Title label not found.');
               }
 
-              // Match la description entre --- (ignorer tout avant le label, avec ou sans **)
-              const descMatch = latestComment.body.match(/[\s\S]*?(\*\*)?Description améliorée(\*\*)?\s*:[^\n]*\n\s*---\s*\n([\s\S]+?)---\s*/i);
-              if (descMatch) {
-                newDescription = descMatch[3].trim();
-                console.log('Extracted description length:', newDescription.length);
+              // Extraire la description entre ---
+              const descLabelIndex = latestComment.body.indexOf('**Description améliorée :**');
+              if (descLabelIndex !== -1) {
+                const afterDescLabel = latestComment.body.slice(descLabelIndex + '**Description améliorée :**'.length).trim();
+                const descStartIndex = afterDescLabel.indexOf('---\n');
+                if (descStartIndex !== -1) {
+                  const afterFirstDash = afterDescLabel.slice(descStartIndex + '---\n'.length);
+                  const descEndIndex = afterFirstDash.indexOf('\n---');
+                  if (descEndIndex !== -1) {
+                    newDescription = afterFirstDash.slice(0, descEndIndex).trim();
+                    console.log('Extracted description length:', newDescription.length);
+                  }
+                }
               } else {
-                console.log('Description regex failed. No match found.');
+                console.log('Description label not found.');
               }
             }
 
@@ -135,17 +147,29 @@ jobs:
                   const content = data.choices[0].message.content;
                   console.log('Mistral response received');
                   
-                  // Extraire le titre et la description au format standardisé
-                  const titleMatch = content.match(/[\s\S]*?(\*\*)?Titre amélioré(\*\*)?\s*:\s*([^\n*]+)/i);
-                  if (titleMatch) {
-                    newTitle = titleMatch[3].trim();
-                    console.log('Mistral title:', newTitle);
+                  // Extraire le titre et la description au format standardisé (même logique que pour les commentaires)
+                  const titleLabelIndex = content.indexOf('**Titre amélioré :**');
+                  if (titleLabelIndex !== -1) {
+                    const afterTitleLabel = content.slice(titleLabelIndex + '**Titre amélioré :**'.length).trim();
+                    const titleEndIndex = afterTitleLabel.indexOf('\n');
+                    if (titleEndIndex !== -1) {
+                      newTitle = afterTitleLabel.slice(0, titleEndIndex).trim();
+                      console.log('Mistral title:', newTitle);
+                    }
                   }
                   
-                  const descMatch = content.match(/[\s\S]*?(\*\*)?Description améliorée(\*\*)?\s*:[^\n]*\n\s*---\s*\n([\s\S]+?)---\s*/i);
-                  if (descMatch) {
-                    newDescription = descMatch[3].trim();
-                    console.log('Mistral description length:', newDescription.length);
+                  const descLabelIndex = content.indexOf('**Description améliorée :**');
+                  if (descLabelIndex !== -1) {
+                    const afterDescLabel = content.slice(descLabelIndex + '**Description améliorée :**'.length).trim();
+                    const descStartIndex = afterDescLabel.indexOf('---\n');
+                    if (descStartIndex !== -1) {
+                      const afterFirstDash = afterDescLabel.slice(descStartIndex + '---\n'.length);
+                      const descEndIndex = afterFirstDash.indexOf('\n---');
+                      if (descEndIndex !== -1) {
+                        newDescription = afterFirstDash.slice(0, descEndIndex).trim();
+                        console.log('Mistral description length:', newDescription.length);
+                      }
+                    }
                   }
                 } else {
                   console.error('Mistral API error:', mistralResponse.status);
