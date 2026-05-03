@@ -181,13 +181,13 @@ jobs:
               console.log('Mistral API key not configured, skipping generation');
             }
 
-            // Nettoyer et sauvegarder pour l'étape suivante
+            // Nettoyer et sauvegarder pour l'étape suivante (échapper les caractères spéciaux)
             if (newTitle) {
-              const cleanTitle = newTitle.replace(/\n/g, ' ').replace(/\r/g, ' ').trim();
+              const cleanTitle = newTitle.replace(/\n/g, ' ').replace(/\r/g, ' ').replace(/'/g, "\\'").trim();
               core.setOutput('new_title', cleanTitle);
             }
             if (newDescription) {
-              const cleanDesc = newDescription.replace(/\n/g, ' ').replace(/\r/g, ' ').trim();
+              const cleanDesc = newDescription.replace(/\n/g, ' ').replace(/\r/g, ' ').replace(/'/g, "\\'").trim();
               core.setOutput('new_description', cleanDesc);
             }
             console.log('Outputs set - title:', newTitle, 'description length:', newDescription ? newDescription.length : 0);
