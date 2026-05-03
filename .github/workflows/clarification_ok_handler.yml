@@ -58,15 +58,15 @@ jobs:
               if (proposalIndex !== -1) {
                 const contentAfter = latestComment.body.slice(proposalIndex + proposalText.length).trim();
 
-                // Extraire titre amélioré
-                const titleMatch = contentAfter.match(/Titre amélioré\s*:\s*([^\n]+)/i);
+                // Extraire titre amélioré (éviter les matches sur **)
+                const titleMatch = contentAfter.match(/Titre amélioré\s*:\s*([^\n*]+)/i);
                 if (titleMatch) {
                   newTitle = titleMatch[1].trim();
                   console.log('Extracted title:', newTitle);
                 }
 
-                // Extraire description améliorée
-                const descMatch = contentAfter.match(/Description améliorée\s*:\s*([\s\S]*)/i);
+                // Extraire description améliorée (éviter les matches sur **)
+                const descMatch = contentAfter.match(/Description améliorée\s*:\s*([\s\S]+?)(?=\n\n|\n\*|\Z)/i);
                 if (descMatch) {
                   newDescription = descMatch[1].trim();
                   console.log('Extracted description length:', newDescription.length);
@@ -153,16 +153,16 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const newTitle = '${{ steps.process_comment.outputs.new_title }}';
-            const newDescription = '${{ steps.process_comment.outputs.new_description }}';
+            const newTitle = '${{ steps.process_comment.outputs.new_title }}'.trim();
+            const newDescription = '${{ steps.process_comment.outputs.new_description }}'.trim();
 
-            console.log('Updating issue with title:', newTitle, 'description:', newDescription);
+            console.log('Updating issue with title:', newTitle, 'description length:', newDescription.length);
 
             const updatePayload = {};
-            if (newTitle) {
+            if (newTitle && newTitle !== '**') {
               updatePayload.title = newTitle;
             }
-            if (newDescription) {
+            if (newDescription && newDescription !== '**') {
               updatePayload.body = newDescription;
             }
 
@@ -181,6 +181,8 @@ jobs:
                 issue_number: context.issue.number,
                 body: '✅ Issue mise à jour avec la proposition de réécriture. Merci !'
               });
+            } else {
+              console.log('No valid updates to apply');
             }
 
             // Supprimer le label clarification-ok
