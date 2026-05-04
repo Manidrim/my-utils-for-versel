@@ -182,15 +182,16 @@ jobs:
               console.log('Mistral API key not configured, skipping generation');
             }
 
-            // Nettoyer et sauvegarder pour l'étape suivante (conserver les sauts de ligne, échapper les caractères spéciaux)
+            // Nettoyer et sauvegarder pour l'étape suivante (conserver les sauts de ligne)
+            // Utiliser base64 pour éviter les problèmes d'échappement
             if (newTitle) {
-              const cleanTitle = newTitle.replace(/\r/g, '').replace(/'/g, "\\'").replace(/\n/g, ' ').trim();
-              core.setOutput('new_title', cleanTitle);
+              const cleanTitle = newTitle.replace(/\r/g, '').trim();
+              core.setOutput('new_title', Buffer.from(cleanTitle).toString('base64'));
             }
             if (newDescription) {
-              // Conserver les sauts de ligne pour le formatage, mais échapper les ' et " et les retours chariot
-              const cleanDesc = newDescription.replace(/\r/g, '').replace(/'/g, "\\'").replace(/\"/g, '\\"');
-              core.setOutput('new_description', cleanDesc);
+              // Conserver les sauts de ligne pour le formatage
+              const cleanDesc = newDescription.replace(/\r/g, '');
+              core.setOutput('new_description', Buffer.from(cleanDesc).toString('base64'));
             }
             console.log('Outputs set - title:', newTitle, 'description length:', newDescription ? newDescription.length : 0);
 
@@ -199,8 +200,9 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const newTitle = '${{ steps.process_comment.outputs.new_title }}'.trim();
-            const newDescription = '${{ steps.process_comment.outputs.new_description }}';
+            // Décoder les valeurs base64
+            const newTitle = '${{ steps.process_comment.outputs.new_title }}' ? Buffer.from('${{ steps.process_comment.outputs.new_title }}', 'base64').toString('utf8').trim() : '';
+            const newDescription = '${{ steps.process_comment.outputs.new_description }}' ? Buffer.from('${{ steps.process_comment.outputs.new_description }}', 'base64').toString('utf8') : '';
 
             console.log('Updating issue with title:', newTitle, 'description length:', newDescription.length);
 
