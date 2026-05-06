@@ -20,13 +20,12 @@ jobs:
       - name: Call Mistral PO Agent
         uses: actions/github-script@v7
         env:
-          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-          MISTRAL_MODEL_ID: ${{ secrets.MISTRAL_MODEL_ID }}
+          MISTRAL_API_ID_PO: ${{ secrets.MISTRAL_API_ID_PO }}
         with:
           script: |
             const prompt = `${{ github.event.inputs.prompt }}`;
             const bearerPrefix = String.fromCharCode(66, 101, 97, 114, 101, 114, 32);
-            const authHeader = bearerPrefix + process.env.MISTRAL_API_KEY;
+            const authHeader = bearerPrefix + process.env.MISTRAL_API_ID_PO;
             
             const mistralResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
               method: 'POST',
@@ -35,7 +34,7 @@ jobs:
                 'Authorization': authHeader
               },
               body: JSON.stringify({
-                model: process.env.MISTRAL_MODEL_ID,
+                model: process.env.MISTRAL_API_ID_PO,
                 messages: [{ role: 'user', content: prompt }],
                 temperature: 0.3
               })
