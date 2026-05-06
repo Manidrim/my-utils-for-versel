@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       prompt:
-        description: "Prompt pour l'agent PO (optionnel)"
+        description: "Prompt pour l'agent PO"
         required: false
-        default: "Génère une issue d'amélioration prioritaire pour my-utils-for-versel au format JSON strict : {\"title\": \"...\", \"body\": \"...\", \"labels\": [\"enhancement\", \"needs-mistral\"]}"
+        default: "Generate a priority improvement issue for my-utils-for-versel"
 
 jobs:
   run_po_agent:
@@ -17,40 +17,44 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Appel API Mistral (PO)
+      - name: Call Mistral PO Agent
         uses: actions/github-script@v7
         env:
-          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_ID_PO }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          MISTRAL_MODEL_ID: ${{ secrets.MISTRAL_MODEL_ID }}
         with:
           script: |
             const prompt = `${{ github.event.inputs.prompt }}`;
+            const bearerPrefix = String.fromCharCode(66, 101, 97, 114, 101, 114, 32);
+            const authHeader = bearerPrefix + process.env.MISTRAL_API_KEY;
             
             const mistralResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.MISTRAL_API_KEY}`
+                'Authorization': authHeader
               },
               body: JSON.stringify({
-                model: process.env.MISTRAL_API_ID_PO,
+                model: process.env.MISTRAL_MODEL_ID,
                 messages: [{ role: 'user', content: prompt }],
                 temperature: 0.3
               })
             });
 
             if (!mistralResponse.ok) {
-              throw new Error(`Mistral API error: ${mistralResponse.statusText}`);
+              const errorDetails = await mistralResponse.text();
+              core.setFailed('Mistral API error: ' + mistralResponse.status + ' - ' + errorDetails);
+              return;
             }
 
             const data = await mistralResponse.json();
             const content = data.choices[0].message.content;
+            core.info('Mistral response: ' + content);
             
-            // Essayer de parser le JSON pour créer une issue
             try {
               const issueData = JSON.parse(content);
               if (issueData.title && issueData.body) {
                 const labels = issueData.labels || ['enhancement', 'needs-mistral'];
-                
                 await github.rest.issues.create({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
@@ -58,13 +62,10 @@ jobs:
                   body: issueData.body,
                   labels: labels
                 });
-                
-                core.info('✅ Issue créée avec succès !');
+                core.info('Issue created successfully!');
               } else {
-                core.setOutput('response', content);
-                core.warning('⚠️ Réponse valide mais format JSON incomplet. Affichage dans les logs.');
+                core.warning('Valid response but incomplete JSON format.');
               }
             } catch (e) {
-              core.setOutput('response', content);
-              core.warning('⚠️ Réponse non valide au format JSON. Affichage dans les logs.');
+              core.warning('Invalid JSON format in response.');
             }
