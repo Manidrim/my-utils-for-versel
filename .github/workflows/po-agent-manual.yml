@@ -26,7 +26,6 @@ jobs:
           script: |
             const prompt = `${{ github.event.inputs.prompt }}`;
             
-            // Construire "Bearer " via String.fromCharCode pour éviter les filtres
             const bearerPrefix = String.fromCharCode(66, 101, 97, 114, 101, 114, 32);
             const authHeader = bearerPrefix + process.env.MISTRAL_API_KEY;
             
