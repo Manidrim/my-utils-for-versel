@@ -59,18 +59,14 @@ jobs:
               "   - Risque technique (dette technique, sécurité, scalabilité).",
               "   - Effort de correction (privilégie les quick wins si impact équivalent).",
               "2. Sois spécifique : L'issue doit être actionnable (pas de 'améliorer la doc', mais 'ajouter des exemples dans la doc de l'API /users').",
-              "3. Format de sortie : UNIQUEMENT ce JSON (pas de texte avant/après) :",
-              '   {\n',
-              '     "title": "[MAX 50 caractères] Résumé clair de l\'issue",\n',
-              '     "body": "Description détaillée avec :\\n',
-              '        - Contexte : Pourquoi c\'est un problème (1-2 phrases).\\n',
-              '        - Impact : Conséquences si non résolu.\\n',
-              '        - Solution proposée : Étapes concrètes pour régler le problème.\\n',
-              '        - Critère d\'acceptance : Comment valider que c\'est résolu.",\n',
-              '     "priority": "low|medium|high|critical",\n',
-              '     "labels": ["max 3 labels pertinents"]\n',
-              '   }'
-            ].join("\n");
+              "3. Format de sortie : UNIQUEMENT ce JSON (pas de texte avant/après) :"
+            ].join("\n") + `
+   {
+     "title": "[MAX 50 caractères] Résumé clair de l'issue",
+     "body": "Description détaillée avec :\n     - Contexte : Pourquoi c'est un problème (1-2 phrases).\n     - Impact : Conséquences si non résolu.\n     - Solution proposée : Étapes concrètes pour régler le problème.\n     - Critère d'acceptance : Comment valider que c'est résolu.",
+     "priority": "low|medium|high|critical",
+     "labels": ["max 3 labels pertinents"]
+   }`;
 
             const userPrompt = `Analyse le projet GitHub suivant : ${repository}. ${poPrompt}`;
             
