@@ -18,6 +18,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Read PO_BRIEF.md
+        id: read_brief
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const briefPath = path.join(process.env.GITHUB_WORKSPACE, 'PO_BRIEF.md');
+            let briefContent = '';
+            try {
+              briefContent = fs.readFileSync(briefPath, 'utf8');
+            } catch (e) {
+              core.warning('PO_BRIEF.md not found, continuing without it.');
+            }
+            core.setOutput('content', briefContent);
+
       - name: Call Mistral PO Agent v2
         uses: actions/github-script@v7
         env:
@@ -25,11 +41,17 @@ jobs:
         with:
           script: |
             const repository = `${{ github.event.inputs.repository }}`;
+            const briefContent = `${{ steps.read_brief.outputs.content }}`;
             const bearerPrefix = String.fromCharCode(66, 101, 97, 114, 101, 114, 32);
             const authHeader = bearerPrefix + process.env.MISTRAL_API_KEY;
             
             const poPrompt = `Tu es un **Product Owner senior** ultra-rigoureux, spécialisé dans l'optimisation de projets logiciels.
 Ta mission : **Analyser le projet fourni et identifier UNE SEULE issue d'amélioration**, la plus critique et impactante pour la qualité, la maintenabilité ou l'expérience utilisateur.
+
+### **Contexte supplémentaire** :
+Voici le brief du projet pour t'aider dans ton analyse :
+\[Brief du projet\]
+${briefContent}
 
 ### **Règles absolues** :
 1. **Une seule issue** : Même si tu vois 10 problèmes, choisis **LE PLUS IMPORTANT** selon ces critères (par ordre) :
