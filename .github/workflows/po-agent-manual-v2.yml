@@ -22,7 +22,6 @@ jobs:
         uses: actions/github-script@v7
         env:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-          MISTRAL_MODEL_ID: ${{ secrets.MISTRAL_API_ID_PO }}
         with:
           script: |
             const repository = `${{ github.event.inputs.repository }}`;
@@ -61,7 +60,7 @@ Ta mission : **Analyser le projet fourni et identifier UNE SEULE issue d'amélio
                 'Authorization': authHeader
               },
               body: JSON.stringify({
-                model: process.env.MISTRAL_MODEL_ID,
+                model: "mistral-large-latest",
                 messages: [{ role: 'user', content: userPrompt }],
                 temperature: 0.3
               })
