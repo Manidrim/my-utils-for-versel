@@ -25,8 +25,7 @@ jobs:
         with:
           script: |
             const prompt = `${{ github.event.inputs.prompt }}`;
-            const bearerPrefix = String.fromCharCode(66, 101, 97, 114, 101, 114, 32);
-            const authHeader = bearerPrefix + process.env.MISTRAL_API_KEY;
+            const authHeader = 'Bearer ' + process.env.MISTRAL_API_KEY;
             
             const mistralResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
               method: 'POST',
@@ -43,7 +42,7 @@ jobs:
 
             if (!mistralResponse.ok) {
               const errorDetails = await mistralResponse.text();
-              core.setFailed('Mistral API error: ' + mistralResponse.status + ' - ' + errorDetails);
+              core.setFailed(`Mistral API error: ${mistralResponse.status} - ${errorDetails}. Vérifiez que MISTRAL_API_KEY est configuré.`);
               return;
             }
 
