@@ -21,7 +21,7 @@ jobs:
         uses: actions/github-script@v7
         env:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-          MISTRAL_MODEL_ID: ${{ secrets.MISTRAL_API_ID_PO }}
+          MISTRAL_MODEL_ID: ${{ secrets.MISTRAL_MODEL_ID }}
         with:
           script: |
             const prompt = `${{ github.event.inputs.prompt }}`;
@@ -34,15 +34,22 @@ jobs:
                 'Authorization': authHeader
               },
               body: JSON.stringify({
-                model: process.env.MISTRAL_MODEL_ID,
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.3
+                model: process.env.MISTRAL_MODEL_ID || 'mistral-large-latest',
+                messages: [
+                  {
+                    role: 'system',
+                    content: 'You MUST respond with a valid JSON object only. No markdown, no explanation. Use this exact format: { "title": string, "body": string, "priority": "low|medium|high|critical", "labels": string[] }'
+                  },
+                  { role: 'user', content: prompt }
+                ],
+                temperature: 0.3,
+                response_format: { type: 'json_object' }
               })
             });
 
             if (!mistralResponse.ok) {
               const errorDetails = await mistralResponse.text();
-              core.setFailed(`Mistral API error: ${mistralResponse.status} - ${errorDetails}. Vérifiez que MISTRAL_API_KEY est configuré.`);
+              core.setFailed(`Mistral API error: ${mistralResponse.status} - ${errorDetails}. Vérifiez que MISTRAL_API_KEY et MISTRAL_MODEL_ID sont configurés.`);
               return;
             }
 
@@ -53,7 +60,7 @@ jobs:
             try {
               const issueData = JSON.parse(content);
               if (issueData.title && issueData.body) {
-                const labels = issueData.labels || ['enhancement', 'needs-mistral'];
+                const labels = issueData.labels || ['enhancement'];
                 await github.rest.issues.create({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
@@ -63,8 +70,8 @@ jobs:
                 });
                 core.info('Issue created successfully!');
               } else {
-                core.warning('Valid response but incomplete JSON format.');
+                core.setFailed('Mistral response is missing required fields (title, body). Response: ' + content);
               }
             } catch (e) {
-              core.warning('Invalid JSON format in response.');
+              core.setFailed('Invalid JSON format in Mistral response: ' + e.message + '. Response was: ' + content);
             }
