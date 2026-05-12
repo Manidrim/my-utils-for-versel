@@ -6,7 +6,7 @@ on:
 
 jobs:
   update_issue_from_comment:
-    if: github.event.label.name == 'clarification-ok'
+    if: github.event.label.name == 'clarification-ok' && contains(github.event.issue.labels.*.name, 'clarification-ok')
     runs-on: ubuntu-latest
     permissions:
       issues: write
@@ -94,8 +94,7 @@ jobs:
             }
 
             // Si pas de contenu trouvé, générer avec Mistral (uniquement si la clé API est disponible)
-            // DESACTIVE POUR TEST : if ((!newTitle || !newDescription) && process.env.MISTRAL_API_KEY) {
-            if (false && (!newTitle || !newDescription) && process.env.MISTRAL_API_KEY) {
+            if ((!newTitle || !newDescription) && process.env.MISTRAL_API_KEY) {
               console.log('No valid rewrite proposal found in comments, generating with Mistral...');
               
               const title = issue.title || '';

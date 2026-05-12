@@ -42,8 +42,7 @@ jobs:
           script: |
             const repository = `${{ github.event.inputs.repository }}`;
             const briefContent = `${{ steps.read_brief.outputs.content }}`;
-            const bearerPrefix = String.fromCharCode(66, 101, 97, 114, 101, 114, 32);
-            const authHeader = bearerPrefix + process.env.MISTRAL_API_KEY;
+            const authHeader = 'Bearer ' + process.env.MISTRAL_API_KEY;
             
             const poPrompt = [
               "Tu es un Product Owner senior ultra-rigoureux, specialise dans l optimisation de projets logiciels.",
@@ -83,7 +82,7 @@ jobs:
 
             if (!mistralResponse.ok) {
               const errorDetails = await mistralResponse.text();
-              core.setFailed('Mistral API error: ' + mistralResponse.status + ' - ' + errorDetails);
+              core.setFailed(`Mistral API error: ${mistralResponse.status} - ${errorDetails}. Vérifiez que MISTRAL_API_KEY est configuré.`);
               return;
             }
 
@@ -94,7 +93,7 @@ jobs:
             try {
               const issueData = JSON.parse(content);
               if (issueData.title && issueData.body) {
-                const labels = issueData.labels || ['enhancement', 'needs-mistral', 'po-review'];
+                const labels = issueData.labels || ['enhancement', 'needs-mistral'];
                 await github.rest.issues.create({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
