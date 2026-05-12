@@ -58,11 +58,8 @@ jobs:
               "   - Risque technique (dette technique, securite, scalabilite).",
               "   - Effort de correction (privilégie les quick wins si impact equivalent).",
               "2. Sois specifique : L issue doit etre actionnable (pas de ameliorer la doc, mais ajouter des exemples dans la doc de l API /users).",
-              "3. Format de sortie : UNIQUEMENT ce JSON (pas de texte avant/apres) :",
-              "   title: string (max 50 caracteres)",
-              "   body: string avec Contexte, Impact, Solution proposee, Criteres d acceptation",
-              "   priority: low|medium|high|critical",
-              "   labels: array de max 3 strings"
+              "3. Format de sortie : UNIQUEMENT un JSON valide, sans texte avant/apres, sans markdown, sans backticks :",
+              '   { "title": string (max 50 caracteres), "body": string avec Contexte, Impact, Solution proposee, Criteres d acceptation, "priority": "low|medium|high|critical", "labels": array de max 3 strings }'
             ].join("\n");
 
             const userPrompt = `Analyse le projet GitHub suivant : ${repository}. ${poPrompt}`;
@@ -75,8 +72,15 @@ jobs:
               },
               body: JSON.stringify({
                 model: "mistral-large-latest",
-                messages: [{ role: 'user', content: userPrompt }],
-                temperature: 0.3
+                messages: [
+                  {
+                    role: 'system',
+                    content: 'You MUST respond with a valid JSON object only. No markdown, no explanation, no backticks. Use this exact format: { "title": string, "body": string, "priority": "low|medium|high|critical", "labels": string[] }'
+                  },
+                  { role: 'user', content: userPrompt }
+                ],
+                temperature: 0.3,
+                response_format: { type: 'json_object' }
               })
             });
 
@@ -103,8 +107,8 @@ jobs:
                 });
                 core.info('Issue created successfully!');
               } else {
-                core.warning('Valid response but incomplete JSON format.');
+                core.setFailed('Mistral response is missing required fields (title, body). Response: ' + content);
               }
             } catch (e) {
-              core.warning('Invalid JSON format in response: ' + e.message);
+              core.setFailed('Invalid JSON format in Mistral response: ' + e.message + '. Response was: ' + content);
             }
