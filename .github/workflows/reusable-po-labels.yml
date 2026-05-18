@@ -1,4 +1,4 @@
-name: Reusable - Create Required Labels
+name: Reusable - PO Labels
 
 on:
   workflow_call:

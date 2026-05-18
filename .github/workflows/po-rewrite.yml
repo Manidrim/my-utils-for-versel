@@ -1,4 +1,4 @@
-name: Generate Rewrite Proposal with Mistral
+name: PO - Generate Rewrite Proposal with Mistral
 
 on:
   issues:
@@ -7,6 +7,6 @@ on:
 jobs:
   call:
     if: github.event.label.name == 'needs-mistral'
-    uses: ./.github/workflows/reusable-mistral-generator.yml
+    uses: ./.github/workflows/reusable-po-rewrite.yml
     secrets:
       MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}

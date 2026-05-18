@@ -1,4 +1,4 @@
-name: Reusable - Generate Rewrite Proposal with Mistral
+name: Reusable - PO Rewrite Generator
 
 on:
   workflow_call:

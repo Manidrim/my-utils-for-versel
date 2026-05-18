@@ -1,4 +1,4 @@
-name: Reusable - Handle Clarification OK Label
+name: Reusable - PO Clarification Handler
 
 on:
   workflow_call:
