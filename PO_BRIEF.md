@@ -416,6 +416,7 @@ Utilisez ce tableau pour évaluer chaque proposition :
 | 2026-05-18 | **Refactor des workflows en reusable workflows** | Réutilisabilité de l'automatisation Mistral/PO sur tout projet (export V1 ultérieur) | PO |
 | 2026-05-18 | **Plafond de 2 issues PO ouvertes + chaîne auto + anti-doublon** | Limiter la file de validation ; label dédié `po-generated` | PO |
 | 2026-05-18 | **Convention de nommage `po-*` / `reusable-po-*`** | Nommage clair et cohérent des workflows (fin des suffixes `_handler`/`-v2`) | PO |
+| 2026-05-18 | **Correction du prompt de réécriture (`reusable-po-rewrite.yml`)** | Le prompt ignorait titre/description/réponses de l'issue : injection du contexte complet (issue + échanges de clarification) pour une réécriture pertinente | Coding Agent |
 
 ### **Questions Ouvertes**
 1. **Faut-il ajouter un backend ?**
@@ -442,6 +443,7 @@ Utilisez ce tableau pour évaluer chaque proposition :
 | 1.0 | 2026-05-06 | [Votre Nom] | Création initiale du document |
 | 1.1 | 2026-05-18 | Coding Agent | Refactor workflows en reusable workflows ; nouvelle politique PO Agent (max 2 issues `po-generated`, chaîne auto, anti-doublon) |
 | 1.2 | 2026-05-18 | Coding Agent | Convention de nommage `po-*` / `reusable-po-*` pour tous les workflows |
+| 1.3 | 2026-05-18 | Coding Agent | Fix : `reusable-po-rewrite.yml` injecte désormais le titre, la description et les commentaires (questions/réponses) dans le prompt Mistral |
 
 ---
 
