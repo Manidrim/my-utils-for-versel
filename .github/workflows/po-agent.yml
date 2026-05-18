@@ -1,0 +1,31 @@
+name: PO Agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: "Repository to analyze (format: owner/repo)"
+        required: false
+        default: ""
+      prompt:
+        description: "Prompt personnalisé (optionnel, sinon prompt PO basé sur PO_BRIEF.md)"
+        required: false
+        default: ""
+  issues:
+    types: [opened, closed]
+
+jobs:
+  call:
+    # Manual run, OR an issue event that concerns a PO-generated issue
+    # (re-arms the chain on creation, frees a slot on close).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.issue.labels.*.name, 'po-generated')
+    uses: ./.github/workflows/reusable-po-agent.yml
+    with:
+      repository: ${{ github.event.inputs.repository || github.repository }}
+      custom_prompt: ${{ github.event.inputs.prompt || '' }}
+    secrets:
+      MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+      MISTRAL_MODEL_ID: ${{ secrets.MISTRAL_MODEL_ID }}
+      PO_TRIGGER_TOKEN: ${{ secrets.PO_TRIGGER_TOKEN }}

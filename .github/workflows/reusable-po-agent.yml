@@ -1,0 +1,173 @@
+name: Reusable - PO Agent
+
+on:
+  workflow_call:
+    inputs:
+      repository:
+        required: false
+        type: string
+        default: ${{ github.repository }}
+      brief_path:
+        required: false
+        type: string
+        default: PO_BRIEF.md
+      mistral_model:
+        required: false
+        type: string
+        default: mistral-large-latest
+      custom_prompt:
+        required: false
+        type: string
+        default: ""
+      po_label:
+        required: false
+        type: string
+        default: po-generated
+      max_open_po_issues:
+        required: false
+        type: number
+        default: 2
+    secrets:
+      MISTRAL_API_KEY:
+        required: true
+      MISTRAL_MODEL_ID:
+        required: false
+      PO_TRIGGER_TOKEN:
+        required: false
+
+jobs:
+  analyze_and_create_issue:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    concurrency:
+      group: po-agent-${{ github.repository }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: PO Agent
+        uses: actions/github-script@v7
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          MISTRAL_MODEL: ${{ secrets.MISTRAL_MODEL_ID || inputs.mistral_model }}
+          PO_REPOSITORY: ${{ inputs.repository }}
+          BRIEF_PATH: ${{ inputs.brief_path }}
+          CUSTOM_PROMPT: ${{ inputs.custom_prompt }}
+          PO_LABEL: ${{ inputs.po_label }}
+          MAX_OPEN_PO_ISSUES: ${{ inputs.max_open_po_issues }}
+        with:
+          github-token: ${{ secrets.PO_TRIGGER_TOKEN || github.token }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const poLabel = process.env.PO_LABEL;
+            const maxOpen = parseInt(process.env.MAX_OPEN_PO_ISSUES, 10) || 2;
+
+            // 1. Threshold guard: count open PO-generated issues
+            const openPoIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: poLabel,
+              per_page: 100
+            });
+            const realIssues = openPoIssues.filter(i => !i.pull_request);
+            core.info(`Open '${poLabel}' issues: ${realIssues.length} / max ${maxOpen}`);
+            if (realIssues.length >= maxOpen) {
+              core.info('Threshold reached, no new issue will be created.');
+              return;
+            }
+
+            // 2. Anti-duplicate context: all open issues (title + body excerpt)
+            const allOpen = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+            const existingIssuesBlock = allOpen
+              .filter(i => !i.pull_request)
+              .map(i => `- #${i.number} ${i.title}\n  ${(i.body || '').replace(/\s+/g, ' ').slice(0, 300)}`)
+              .join('\n');
+
+            // 3. Build prompt
+            let briefContent = '';
+            try {
+              briefContent = fs.readFileSync(
+                path.join(process.env.GITHUB_WORKSPACE, process.env.BRIEF_PATH), 'utf8');
+            } catch (e) {
+              core.warning(`${process.env.BRIEF_PATH} not found, continuing without it.`);
+            }
+
+            const customPrompt = (process.env.CUSTOM_PROMPT || '').trim();
+            let userPrompt;
+            if (customPrompt) {
+              userPrompt = existingIssuesBlock
+                ? `${customPrompt}\n\nIssues déjà ouvertes (NE PAS dupliquer) :\n${existingIssuesBlock}`
+                : customPrompt;
+            } else {
+              const buildPoPrompt = require(
+                path.join(process.env.GITHUB_WORKSPACE, '.github/prompts/po-prompt.js'));
+              userPrompt = buildPoPrompt(
+                process.env.PO_REPOSITORY, briefContent, existingIssuesBlock);
+            }
+
+            // 4. Call Mistral
+            const mistralResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + process.env.MISTRAL_API_KEY
+              },
+              body: JSON.stringify({
+                model: process.env.MISTRAL_MODEL,
+                messages: [
+                  {
+                    role: 'system',
+                    content: 'You MUST respond with a valid JSON object only. No markdown, no explanation, no backticks. Use this exact format: { "title": string, "body": string, "priority": "low|medium|high|critical", "labels": string[] }'
+                  },
+                  { role: 'user', content: userPrompt }
+                ],
+                temperature: 0.3,
+                response_format: { type: 'json_object' }
+              })
+            });
+
+            if (!mistralResponse.ok) {
+              const errorDetails = await mistralResponse.text();
+              core.setFailed(`Mistral API error: ${mistralResponse.status} - ${errorDetails}. Vérifiez que MISTRAL_API_KEY est configuré.`);
+              return;
+            }
+
+            const data = await mistralResponse.json();
+            const content = data.choices[0].message.content;
+            core.info('Mistral response: ' + content);
+
+            // 5. Parse + create issue (tagged with poLabel)
+            let issueData;
+            try {
+              issueData = JSON.parse(content);
+            } catch (e) {
+              core.setFailed('Invalid JSON format in Mistral response: ' + e.message + '. Response was: ' + content);
+              return;
+            }
+            if (!issueData.title || !issueData.body) {
+              core.setFailed('Mistral response is missing required fields (title, body). Response: ' + content);
+              return;
+            }
+
+            const labels = Array.from(new Set([
+              ...(Array.isArray(issueData.labels) ? issueData.labels : ['enhancement']),
+              poLabel
+            ]));
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: issueData.title,
+              body: issueData.body,
+              labels
+            });
+            core.info('Issue created successfully with label ' + poLabel + '!');
