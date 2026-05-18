@@ -413,6 +413,8 @@ Utilisez ce tableau pour évaluer chaque proposition :
 |------|----------|----------|-------------|
 | 2026-05-06 | **Utilisation de math.js pour la calculatrice** | Remplacement de `Function()` pour la sécurité | PO |
 | 2026-05-06 | **Unification sur Tailwind CSS** | Cohérence du design, maintenance simplifiée | PO |
+| 2026-05-18 | **Refactor des workflows en reusable workflows** | Réutilisabilité de l'automatisation Mistral/PO sur tout projet (export V1 ultérieur) | PO |
+| 2026-05-18 | **Plafond de 2 issues PO ouvertes + chaîne auto + anti-doublon** | Limiter la file de validation ; label dédié `po-generated` | PO |
 
 ### **Questions Ouvertes**
 1. **Faut-il ajouter un backend ?**
@@ -424,6 +426,12 @@ Utilisez ce tableau pour évaluer chaque proposition :
    - *Options* : Publicité (non intrusive), donations, modèle freemium
    - **Décision** : À discuter (priorité à la croissance utilisateur)
 
+3. **Secret `PO_TRIGGER_TOKEN` (PAT) requis pour la chaîne auto du PO Agent**
+   - GitHub ne ré-enchaîne pas les workflows sur les issues créées via le
+     `GITHUB_TOKEN` par défaut. Sans `PO_TRIGGER_TOKEN`, seul le lancement
+     manuel fonctionne (pas de chaîne automatique jusqu'au seuil de 2).
+   - **Décision** : À configurer côté secrets du repo.
+
 ---
 
 ## 🔄 **Historique des Versions**
@@ -431,8 +439,9 @@ Utilisez ce tableau pour évaluer chaque proposition :
 | Version | Date | Auteur | Changements |
 |---------|------|--------|-------------|
 | 1.0 | 2026-05-06 | [Votre Nom] | Création initiale du document |
+| 1.1 | 2026-05-18 | Coding Agent | Refactor workflows en reusable workflows ; nouvelle politique PO Agent (max 2 issues `po-generated`, chaîne auto, anti-doublon) |
 
 ---
 
 *Document généré automatiquement à partir de l'analyse du dépôt [Manidrim/my-utils-for-versel](https://github.com/Manidrim/my-utils-for-versel).*
-*Dernière mise à jour : 2026-05-06.*
+*Dernière mise à jour : 2026-05-18.*

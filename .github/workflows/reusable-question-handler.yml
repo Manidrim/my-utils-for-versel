@@ -1,0 +1,190 @@
+name: Reusable - Handle Question Label
+
+on:
+  workflow_call:
+    inputs:
+      question_label:
+        required: false
+        type: string
+        default: question
+      needs_clarification_label:
+        required: false
+        type: string
+        default: needs-clarification
+      needs_mistral_label:
+        required: false
+        type: string
+        default: needs-mistral
+      mistral_model:
+        required: false
+        type: string
+        default: mistral-small-latest
+      proposal_marker:
+        required: false
+        type: string
+        default: "### Proposition de réécriture :"
+    secrets:
+      MISTRAL_API_KEY:
+        required: true
+
+jobs:
+  check_and_ask:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Check for existing manual proposal
+        id: check_manual
+        uses: actions/github-script@v7
+        env:
+          PROPOSAL_MARKER: ${{ inputs.proposal_marker }}
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            const manualProposal = comments.find(c =>
+              c.body && c.body.includes(process.env.PROPOSAL_MARKER)
+            );
+            core.setOutput('skip', manualProposal ? 'true' : 'false');
+
+      - name: Call Mistral API to generate clarification questions
+        if: steps.check_manual.outputs.skip == 'false'
+        id: mistral
+        uses: actions/github-script@v7
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          MISTRAL_MODEL: ${{ inputs.mistral_model }}
+        with:
+          script: |
+            const fs = require('fs');
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const title = issue.title || '';
+            const description = issue.body || '';
+
+            const prompt = "Tu es un assistant technique qui aide à clarifier les issues GitHub.\n\n" +
+              "**Contexte de l'issue :**\n" +
+              "- Titre: " + title + "\n" +
+              "- Description: " + description + "\n\n" +
+              "**Ta tâche :**\n\n" +
+              "Génère UNIQUEMENT 3 à 5 questions de clarification en français pour :\n" +
+              "- Clarifier le périmètre (qu'est-ce qui est inclus/exclu ?)\n" +
+              "- Définir les critères d'acceptation\n" +
+              "- Identifier les dépendances ou contraintes techniques\n" +
+              "- Préciser les attentes fonctionnelles\n\n" +
+              "**Format attendu :**\n\n" +
+              "### Questions pour clarifier :\n" +
+              "- [Question 1]\n" +
+              "- [Question 2]\n" +
+              "- [Question 3]\n\n" +
+              "**Règles :**\n" +
+              "- Réponds UNIQUEMENT avec les questions au format ci-dessus.\n" +
+              "- Sois concis et technique.\n" +
+              "- Ne génère PAS de proposition de réécriture.";
+
+            const mistralResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + process.env.MISTRAL_API_KEY
+              },
+              body: JSON.stringify({
+                model: process.env.MISTRAL_MODEL,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.7,
+                max_tokens: 1000
+              })
+            });
+
+            let content;
+            if (!mistralResponse.ok) {
+              const error = await mistralResponse.text();
+              console.error('Mistral API error:', error);
+              content = "### Questions pour clarifier :\n" +
+                "- Description manquante : Pouvez-vous décrire en détail le problème ou la fonctionnalité souhaitée ?\n" +
+                "- Critères d'acceptation : Quels sont les critères pour considérer cette issue comme résolue ?\n" +
+                "- Périmètre : Cette issue concerne-t-elle un composant spécifique, une page, ou une fonctionnalité globale ?\n" +
+                "- Priorité : Quelle est la priorité de cette issue (ex: haute, moyenne, basse) ?\n" +
+                "- Contexte : Y a-t-il un contexte particulier ou des dépendances à prendre en compte ?";
+            } else {
+              const data = await mistralResponse.json();
+              content = data.choices[0].message.content;
+            }
+
+            fs.writeFileSync('/tmp/mistral_content.txt', content);
+
+      - name: Post Mistral-generated content as comment
+        if: steps.check_manual.outputs.skip == 'false'
+        uses: actions/github-script@v7
+        env:
+          NEEDS_CLARIFICATION_LABEL: ${{ inputs.needs_clarification_label }}
+          NEEDS_MISTRAL_LABEL: ${{ inputs.needs_mistral_label }}
+          QUESTION_LABEL: ${{ inputs.question_label }}
+        with:
+          script: |
+            const fs = require('fs');
+            const content = fs.readFileSync('/tmp/mistral_content.txt', 'utf8');
+            const needsClarification = process.env.NEEDS_CLARIFICATION_LABEL;
+            const needsMistral = process.env.NEEDS_MISTRAL_LABEL;
+            const questionLabel = process.env.QUESTION_LABEL;
+
+            const commentBody = "Clarification nécessaire pour cette question\n\n" +
+              "Merci d'avoir ouvert cette issue ! Voici des questions générées par Mistral AI pour améliorer la clarté :\n\n" +
+              content + "\n\n" +
+              "---\n" +
+              "Ce commentaire a été ajouté automatiquement car le label '" + questionLabel + "' a été appliqué.";
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: commentBody
+            });
+
+            async function ensureLabel(name, color, description) {
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  labels: [name]
+                });
+              } catch (error) {
+                try {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name, color, description
+                  });
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: context.issue.number,
+                    labels: [name]
+                  });
+                } catch (e) {
+                  console.log('Could not create or add label ' + name + ':', e.message);
+                }
+              }
+            }
+
+            await ensureLabel(needsClarification, 'fbc900', 'Cette issue a besoin de clarifications');
+            await ensureLabel(needsMistral, '84b6eb', 'Proposition de réécriture à générer avec Mistral');
+
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: questionLabel
+              });
+            } catch (e) {
+              console.log('Could not remove question label:', e.message);
+            }
