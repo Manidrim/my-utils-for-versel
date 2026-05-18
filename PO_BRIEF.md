@@ -417,6 +417,7 @@ Utilisez ce tableau pour évaluer chaque proposition :
 | 2026-05-18 | **Plafond de 2 issues PO ouvertes + chaîne auto + anti-doublon** | Limiter la file de validation ; label dédié `po-generated` | PO |
 | 2026-05-18 | **Convention de nommage `po-*` / `reusable-po-*`** | Nommage clair et cohérent des workflows (fin des suffixes `_handler`/`-v2`) | PO |
 | 2026-05-18 | **Correction du prompt de réécriture (`reusable-po-rewrite.yml`)** | Le prompt ignorait titre/description/réponses de l'issue : injection du contexte complet (issue + échanges de clarification) pour une réécriture pertinente | Coding Agent |
+| 2026-05-18 | **Rebuild complet : 2 workflows, `MISTRAL_API_KEY` seul, prompts externalisés** | Simplification : `po-autocreate.yml` (cron-free, boucle jusqu'à 2 issues + relance sur fermeture d'issue, sans PAT) et `po-clarify.yml` (question → réécriture). Suppression de `PO_TRIGGER_TOKEN`, `MISTRAL_MODEL_ID`, des reusables et des labels `needs-mistral`/`needs-clarification`. Prompts dans `.github/prompts/*.js` | Coding Agent |
 
 ### **Questions Ouvertes**
 1. **Faut-il ajouter un backend ?**
@@ -444,6 +445,7 @@ Utilisez ce tableau pour évaluer chaque proposition :
 | 1.1 | 2026-05-18 | Coding Agent | Refactor workflows en reusable workflows ; nouvelle politique PO Agent (max 2 issues `po-generated`, chaîne auto, anti-doublon) |
 | 1.2 | 2026-05-18 | Coding Agent | Convention de nommage `po-*` / `reusable-po-*` pour tous les workflows |
 | 1.3 | 2026-05-18 | Coding Agent | Fix : `reusable-po-rewrite.yml` injecte désormais le titre, la description et les commentaires (questions/réponses) dans le prompt Mistral |
+| 2.0 | 2026-05-18 | Coding Agent | Rebuild complet : 2 workflows (`po-autocreate.yml`, `po-clarify.yml`), `MISTRAL_API_KEY` uniquement, prompts externalisés dans `.github/prompts/`, suppression des reusables et du PAT |
 
 ---
 
