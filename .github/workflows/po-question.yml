@@ -1,4 +1,4 @@
-name: Handle Question Label
+name: PO - Handle Question Label
 
 on:
   issues:
@@ -7,6 +7,6 @@ on:
 jobs:
   call:
     if: github.event.label.name == 'question'
-    uses: ./.github/workflows/reusable-question-handler.yml
+    uses: ./.github/workflows/reusable-po-question.yml
     secrets:
       MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}

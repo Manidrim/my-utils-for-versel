@@ -1,4 +1,4 @@
-name: Create Required Labels
+name: PO - Create Required Labels
 
 on:
   workflow_dispatch:
@@ -9,4 +9,4 @@ on:
 
 jobs:
   call:
-    uses: ./.github/workflows/reusable-create-labels.yml
+    uses: ./.github/workflows/reusable-po-labels.yml

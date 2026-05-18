@@ -1,4 +1,4 @@
-name: PO Agent
+name: PO - Create Issue
 
 on:
   workflow_dispatch:
@@ -21,7 +21,7 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       contains(github.event.issue.labels.*.name, 'po-generated')
-    uses: ./.github/workflows/reusable-po-agent.yml
+    uses: ./.github/workflows/reusable-po-create-issue.yml
     with:
       repository: ${{ github.event.inputs.repository || github.repository }}
       custom_prompt: ${{ github.event.inputs.prompt || '' }}

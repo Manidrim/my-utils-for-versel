@@ -1,4 +1,4 @@
-name: Reusable - Handle Question Label
+name: Reusable - PO Question Handler
 
 on:
   workflow_call:

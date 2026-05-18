@@ -1,4 +1,4 @@
-name: Reusable - PO Agent
+name: Reusable - PO Create Issue
 
 on:
   workflow_call:
