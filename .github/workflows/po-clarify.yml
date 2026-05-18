@@ -1,0 +1,188 @@
+name: PO - Clarify & Rewrite
+
+# Cycle de clarification d'une issue, piloté par les labels :
+# - label `question`        -> Mistral poste 3-5 questions de clarification.
+# - label `clarification-ok` -> Mistral réécrit titre + description en
+#   intégrant les réponses, puis met l'issue à jour.
+# Seul le secret MISTRAL_API_KEY est requis.
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  questions:
+    if: github.event.label.name == 'question'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Post clarification questions
+        uses: actions/github-script@v7
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+        with:
+          script: |
+            const path = require('path');
+            const buildQuestions = require(
+              path.join(process.env.GITHUB_WORKSPACE, '.github/prompts/questions.js'));
+
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const prompt = buildQuestions(issue.title || '', issue.body || '');
+
+            let content;
+            const mistralResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + process.env.MISTRAL_API_KEY
+              },
+              body: JSON.stringify({
+                model: 'mistral-large-latest',
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.7,
+                max_tokens: 1000
+              })
+            });
+
+            if (!mistralResponse.ok) {
+              core.warning('Mistral API error, posting fallback questions: ' + await mistralResponse.text());
+              content = "### Questions pour clarifier :\n" +
+                "- Description : Pouvez-vous décrire en détail le problème ou la fonctionnalité souhaitée ?\n" +
+                "- Critères d'acceptation : Quels critères valident la résolution de cette issue ?\n" +
+                "- Périmètre : Quel composant / page / fonctionnalité est concerné ?\n" +
+                "- Priorité : Quelle est la priorité (haute, moyenne, basse) ?\n" +
+                "- Contexte : Y a-t-il des dépendances ou contraintes à prendre en compte ?";
+            } else {
+              const data = await mistralResponse.json();
+              content = data.choices[0].message.content;
+            }
+
+            const commentBody = "Clarification nécessaire pour cette issue\n\n" +
+              "Voici des questions générées par Mistral AI pour améliorer la clarté. " +
+              "Répondez-y en commentaire, puis ajoutez le label `clarification-ok` " +
+              "pour déclencher la réécriture.\n\n" +
+              content + "\n\n" +
+              "---\n" +
+              "Commentaire ajouté automatiquement suite au label `question`.";
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: commentBody
+            });
+
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: 'question'
+              });
+            } catch (e) {
+              core.info('Could not remove question label: ' + e.message);
+            }
+
+  rewrite:
+    if: github.event.label.name == 'clarification-ok'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Rewrite issue from clarification
+        uses: actions/github-script@v7
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+        with:
+          script: |
+            const path = require('path');
+            const buildRewrite = require(
+              path.join(process.env.GITHUB_WORKSPACE, '.github/prompts/rewrite.js'));
+
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100
+            });
+
+            const discussion = comments
+              .filter(c => c.body && c.body.trim())
+              .map(c => `[@${c.user && c.user.login}]\n${c.body.trim()}`)
+              .join('\n\n');
+
+            const prompt = buildRewrite(issue.title || '', issue.body || '', discussion);
+
+            const mistralResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + process.env.MISTRAL_API_KEY
+              },
+              body: JSON.stringify({
+                model: 'mistral-large-latest',
+                messages: [
+                  {
+                    role: 'system',
+                    content: 'You MUST respond with a valid JSON object only. No markdown, no explanation, no backticks. Use this exact format: { "title": string, "body": string }'
+                  },
+                  { role: 'user', content: prompt }
+                ],
+                temperature: 0.3,
+                response_format: { type: 'json_object' }
+              })
+            });
+
+            if (!mistralResponse.ok) {
+              core.setFailed(`Mistral API error: ${mistralResponse.status} - ${await mistralResponse.text()}. Vérifiez que MISTRAL_API_KEY est configuré.`);
+              return;
+            }
+
+            const data = await mistralResponse.json();
+            const content = data.choices[0].message.content;
+            core.info('Mistral response: ' + content);
+
+            let rewrite;
+            try {
+              rewrite = JSON.parse(content);
+            } catch (e) {
+              core.setFailed('Invalid JSON format in Mistral response: ' + e.message + '. Response was: ' + content);
+              return;
+            }
+            if (!rewrite.title || !rewrite.body) {
+              core.setFailed('Mistral response is missing required fields (title, body). Response: ' + content);
+              return;
+            }
+
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              title: rewrite.title,
+              body: rewrite.body
+            });
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '✅ Issue réécrite à partir de la clarification (titre + description mis à jour).'
+            });
