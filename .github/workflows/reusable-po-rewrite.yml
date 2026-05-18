@@ -56,16 +56,40 @@ jobs:
               issue_number: context.issue.number
             });
 
-            const prompt = "Génère une proposition de réécriture pour cette issue au format suivant :\n\n" +
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100
+            });
+
+            const title = issue.title || '';
+            const description = issue.body || '';
+            const discussion = comments
+              .filter(c => c.body && c.body.trim())
+              .map(c => `[@${c.user && c.user.login}]\n${c.body.trim()}`)
+              .join('\n\n');
+
+            const prompt = "Tu es un assistant technique qui réécrit des issues GitHub.\n\n" +
+              "**Issue actuelle :**\n" +
+              "- Titre: " + title + "\n" +
+              "- Description: " + description + "\n\n" +
+              "**Échanges de clarification (questions posées et réponses de l'utilisateur) :**\n" +
+              (discussion || "(aucun)") + "\n\n" +
+              "**Ta tâche :**\n" +
+              "En t'appuyant sur la description ET sur les réponses fournies dans les échanges " +
+              "ci-dessus, génère une proposition de réécriture au format suivant :\n\n" +
               "### Proposition de réécriture :\n" +
-              "**Titre amélioré :** [Nouveau titre]\n\n" +
+              "**Titre amélioré :** [Nouveau titre clair et concis]\n\n" +
               "**Description améliorée :**\n" +
               "---\n" +
               "[Description structurée]\n" +
               "---\n\n" +
               "**Règles :**\n" +
-              "- Réponds UNIQUEMENT avec le bloc ci-dessus.\n" +
-              "- Utilise des sections claires (Contexte, Objectif, Critères d'acceptation).";
+              "- Réponds UNIQUEMENT avec le bloc ci-dessus, sans autre texte.\n" +
+              "- Utilise des sections claires (Contexte, Objectif, Critères d'acceptation).\n" +
+              "- Intègre les informations issues des réponses de l'utilisateur.\n" +
+              "- Conserve les informations importantes de l'issue d'origine.";
 
             const mistralResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
               method: 'POST',
