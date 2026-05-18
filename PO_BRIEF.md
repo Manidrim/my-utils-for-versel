@@ -418,6 +418,7 @@ Utilisez ce tableau pour évaluer chaque proposition :
 | 2026-05-18 | **Convention de nommage `po-*` / `reusable-po-*`** | Nommage clair et cohérent des workflows (fin des suffixes `_handler`/`-v2`) | PO |
 | 2026-05-18 | **Correction du prompt de réécriture (`reusable-po-rewrite.yml`)** | Le prompt ignorait titre/description/réponses de l'issue : injection du contexte complet (issue + échanges de clarification) pour une réécriture pertinente | Coding Agent |
 | 2026-05-18 | **Rebuild en 2 workflows (`po-autocreate.yml`, `po-clarify.yml`)** | Simplification : `MISTRAL_API_KEY` seul secret, prompts externalisés dans `.github/prompts/`, suppression de tous les `reusable-po-*.yml`, de `PO_TRIGGER_TOKEN` et `MISTRAL_MODEL_ID` | Coding Agent |
+| 2026-05-18 | **1 issue par run + auto-relance via PAT `PO_DISPATCH_TOKEN`** | `po-autocreate.yml` ne crée plus qu'une issue par run puis se relance (workflow_dispatch via PAT) après une pause ~90 s jusqu'à `maxOpen`, afin que chaque création tienne compte de l'état réel des issues en cours (anti-doublon, clarify/rewrite, actions humaines). Sans le PAT : 1 issue par déclenchement, pas d'auto-relance | Coding Agent |
 
 ### **Questions Ouvertes**
 1. **Faut-il ajouter un backend ?**
@@ -429,11 +430,14 @@ Utilisez ce tableau pour évaluer chaque proposition :
    - *Options* : Publicité (non intrusive), donations, modèle freemium
    - **Décision** : À discuter (priorité à la croissance utilisateur)
 
-3. ~~**Secret `PO_TRIGGER_TOKEN` (PAT) requis pour la chaîne auto du PO Agent**~~
-   - **Résolu (2026-05-18)** : le rebuild en 2 workflows supprime ce besoin.
-     `po-autocreate.yml` boucle dans un seul run jusqu'au seuil de 2 issues,
-     et se relance sur `issues: [closed]` (action humaine). Plus de PAT requis :
-     seul `MISTRAL_API_KEY` est nécessaire.
+3. **Secret `PO_DISPATCH_TOKEN` (PAT) pour l'auto-relance du PO Agent**
+   - **Décision (2026-05-18)** : `po-autocreate.yml` crée 1 issue par run puis
+     se relance via `workflow_dispatch` (API) après ~90 s, jusqu'à `maxOpen`.
+     Le `GITHUB_TOKEN` par défaut ne peut pas s'auto-déclencher : un PAT en
+     secret `PO_DISPATCH_TOKEN` (scope Actions: read/write) est requis pour
+     l'auto-relance. Sans ce secret : 1 issue par déclenchement (manuel ou
+     fermeture d'une issue `po-generated`), sans recomplétion automatique.
+     `MISTRAL_API_KEY` reste requis pour la génération.
 
 ---
 
@@ -446,6 +450,7 @@ Utilisez ce tableau pour évaluer chaque proposition :
 | 1.2 | 2026-05-18 | Coding Agent | Convention de nommage `po-*` / `reusable-po-*` pour tous les workflows |
 | 1.3 | 2026-05-18 | Coding Agent | Fix : `reusable-po-rewrite.yml` injecte désormais le titre, la description et les commentaires (questions/réponses) dans le prompt Mistral |
 | 1.4 | 2026-05-18 | Coding Agent | Rebuild en 2 workflows (`po-autocreate.yml`, `po-clarify.yml`) ; `MISTRAL_API_KEY` seul secret ; prompts externalisés (`autocreate.js`, `questions.js`, `rewrite.js`) ; suppression des `reusable-po-*.yml`, `PO_TRIGGER_TOKEN`, `MISTRAL_MODEL_ID`, `po-prompt.js`, labels `needs-mistral`/`needs-clarification` |
+| 1.5 | 2026-05-18 | Coding Agent | `po-autocreate.yml` : 1 issue par run + auto-relance via PAT `PO_DISPATCH_TOKEN` (workflow_dispatch, pause ~90 s) jusqu'à `maxOpen` ; suppression de la boucle interne `MAX_ITER` ; chaque run recompte l'état réel des issues en cours |
 
 ---
 

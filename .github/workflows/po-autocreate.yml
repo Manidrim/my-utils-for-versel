@@ -1,11 +1,15 @@
 name: PO - Autocreate Issues
 
-# Création automatique d'issues `po-generated`.
+# Création automatique d'issues `po-generated`, UNE seule par run.
 # - workflow_dispatch : premier lancement manuel.
 # - issues: [closed]   : quand vous fermez/validez une issue po-generated,
-#   l'événement (action humaine) relance le workflow qui recomplète jusqu'à 2.
-# Pas de PAT : le GITHUB_TOKEN ne peut pas s'auto-relancer, donc un seul run
-# BOUCLE et crée des issues jusqu'à atteindre max_open.
+#   l'événement (action humaine) relance le workflow.
+# Après avoir créé 1 issue, si le plafond n'est pas atteint, le run attend
+# ~90 s puis se relance lui-même via l'API workflow_dispatch en utilisant le
+# PAT `PO_DISPATCH_TOKEN` (le GITHUB_TOKEN par défaut ne peut pas s'auto-
+# relancer). Chaque run recompte l'état réel des issues en cours, ce qui
+# évite les doublons et tient compte des issues en cours de traitement.
+# Sans PO_DISPATCH_TOKEN : pas d'auto-relance, 1 issue par déclenchement.
 
 on:
   workflow_dispatch:
@@ -33,6 +37,7 @@ jobs:
         uses: actions/github-script@v7
         env:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          PO_DISPATCH_TOKEN: ${{ secrets.PO_DISPATCH_TOKEN }}
         with:
           script: |
             const fs = require('fs');
@@ -41,7 +46,7 @@ jobs:
             const poLabel = 'po-generated';
             const maxOpen = 2;
             const model = 'mistral-large-latest';
-            const MAX_ITER = 5;
+            const relaunchDelayMs = 90000;
 
             const buildPrompt = require(
               path.join(process.env.GITHUB_WORKSPACE, '.github/prompts/autocreate.js'));
@@ -73,87 +78,126 @@ jobs:
               core.warning('PO_BRIEF.md not found, continuing without it.');
             }
 
-            for (let iter = 0; iter < MAX_ITER; iter++) {
-              const openPoIssues = await github.paginate(github.rest.issues.listForRepo, {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                state: 'open',
-                labels: poLabel,
-                per_page: 100
-              });
-              const realIssues = openPoIssues.filter(i => !i.pull_request);
-              core.info(`Open '${poLabel}' issues: ${realIssues.length} / max ${maxOpen}`);
-              if (realIssues.length >= maxOpen) {
-                core.info('Threshold reached, stopping.');
-                break;
-              }
+            // 1 issue par run : on compte l'état réel, on en crée AU PLUS une.
+            const openPoIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: poLabel,
+              per_page: 100
+            });
+            const realIssues = openPoIssues.filter(i => !i.pull_request);
+            core.info(`Open '${poLabel}' issues: ${realIssues.length} / max ${maxOpen}`);
+            if (realIssues.length >= maxOpen) {
+              core.info('Threshold reached, nothing to create and no relaunch.');
+              return;
+            }
 
-              const allOpen = await github.paginate(github.rest.issues.listForRepo, {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                state: 'open',
-                per_page: 100
-              });
-              const existingIssuesBlock = allOpen
-                .filter(i => !i.pull_request)
-                .map(i => `- #${i.number} ${i.title}\n  ${(i.body || '').replace(/\s+/g, ' ').slice(0, 300)}`)
-                .join('\n');
+            const allOpen = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+            const existingIssuesBlock = allOpen
+              .filter(i => !i.pull_request)
+              .map(i => `- #${i.number} ${i.title}\n  ${(i.body || '').replace(/\s+/g, ' ').slice(0, 300)}`)
+              .join('\n');
 
-              const userPrompt = buildPrompt(
-                `${context.repo.owner}/${context.repo.repo}`, briefContent, existingIssuesBlock);
+            const userPrompt = buildPrompt(
+              `${context.repo.owner}/${context.repo.repo}`, briefContent, existingIssuesBlock);
 
-              const mistralResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
+            const mistralResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + process.env.MISTRAL_API_KEY
+              },
+              body: JSON.stringify({
+                model,
+                messages: [
+                  {
+                    role: 'system',
+                    content: 'You MUST respond with a valid JSON object only. No markdown, no explanation, no backticks. Use this exact format: { "title": string, "body": string, "priority": "low|medium|high|critical", "labels": string[] }'
+                  },
+                  { role: 'user', content: userPrompt }
+                ],
+                temperature: 0.3,
+                response_format: { type: 'json_object' }
+              })
+            });
+
+            if (!mistralResponse.ok) {
+              const errorDetails = await mistralResponse.text();
+              core.setFailed(`Mistral API error: ${mistralResponse.status} - ${errorDetails}. Vérifiez que MISTRAL_API_KEY est configuré.`);
+              return;
+            }
+
+            const data = await mistralResponse.json();
+            const content = data.choices[0].message.content;
+            core.info('Mistral response: ' + content);
+
+            let issueData;
+            try {
+              issueData = JSON.parse(content);
+            } catch (e) {
+              core.setFailed('Invalid JSON format in Mistral response: ' + e.message + '. Response was: ' + content);
+              return;
+            }
+            if (!issueData.title || !issueData.body) {
+              core.setFailed('Mistral response is missing required fields (title, body). Response: ' + content);
+              return;
+            }
+
+            const labels = Array.from(new Set([
+              ...(Array.isArray(issueData.labels) ? issueData.labels : ['enhancement']),
+              poLabel
+            ]));
+            const created = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: issueData.title,
+              body: issueData.body,
+              labels
+            });
+            core.info(`Created issue #${created.data.number} with label ${poLabel}.`);
+
+            // Auto-relance jusqu'à maxOpen, en tenant compte des issues en cours.
+            const remaining = maxOpen - (realIssues.length + 1);
+            if (remaining <= 0) {
+              core.info('maxOpen atteint après cette issue, pas de relance.');
+              return;
+            }
+
+            const dispatchToken = process.env.PO_DISPATCH_TOKEN;
+            if (!dispatchToken) {
+              core.warning(
+                'PO_DISPATCH_TOKEN absent : auto-relance désactivée. ' +
+                'Ajoutez un PAT (Actions: read/write) en secret pour ' +
+                'recompléter automatiquement jusqu\'à ' + maxOpen + ' issues.');
+              return;
+            }
+
+            core.info(`Encore ${remaining} issue(s) à créer, pause ~${relaunchDelayMs / 1000}s avant relance.`);
+            await new Promise(r => setTimeout(r, relaunchDelayMs));
+
+            const ref = (context.payload.repository && context.payload.repository.default_branch) || 'main';
+            const dispatchResp = await fetch(
+              `https://api.github.com/repos/${context.repo.owner}/${context.repo.repo}/actions/workflows/po-autocreate.yml/dispatches`,
+              {
                 method: 'POST',
                 headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': 'Bearer ' + process.env.MISTRAL_API_KEY
+                  'Accept': 'application/vnd.github+json',
+                  'Authorization': 'Bearer ' + dispatchToken,
+                  'X-GitHub-Api-Version': '2022-11-28',
+                  'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                  model,
-                  messages: [
-                    {
-                      role: 'system',
-                      content: 'You MUST respond with a valid JSON object only. No markdown, no explanation, no backticks. Use this exact format: { "title": string, "body": string, "priority": "low|medium|high|critical", "labels": string[] }'
-                    },
-                    { role: 'user', content: userPrompt }
-                  ],
-                  temperature: 0.3,
-                  response_format: { type: 'json_object' }
-                })
+                body: JSON.stringify({ ref })
               });
 
-              if (!mistralResponse.ok) {
-                const errorDetails = await mistralResponse.text();
-                core.setFailed(`Mistral API error: ${mistralResponse.status} - ${errorDetails}. Vérifiez que MISTRAL_API_KEY est configuré.`);
-                return;
-              }
-
-              const data = await mistralResponse.json();
-              const content = data.choices[0].message.content;
-              core.info('Mistral response: ' + content);
-
-              let issueData;
-              try {
-                issueData = JSON.parse(content);
-              } catch (e) {
-                core.setFailed('Invalid JSON format in Mistral response: ' + e.message + '. Response was: ' + content);
-                return;
-              }
-              if (!issueData.title || !issueData.body) {
-                core.setFailed('Mistral response is missing required fields (title, body). Response: ' + content);
-                return;
-              }
-
-              const labels = Array.from(new Set([
-                ...(Array.isArray(issueData.labels) ? issueData.labels : ['enhancement']),
-                poLabel
-              ]));
-              const created = await github.rest.issues.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title: issueData.title,
-                body: issueData.body,
-                labels
-              });
-              core.info(`Created issue #${created.data.number} with label ${poLabel}.`);
+            if (!dispatchResp.ok) {
+              const errBody = await dispatchResp.text();
+              core.setFailed(`Auto-relance échouée: ${dispatchResp.status} - ${errBody}. Vérifiez le scope du PAT PO_DISPATCH_TOKEN.`);
+              return;
             }
+            core.info(`Workflow relancé sur ${ref} pour créer la/les issue(s) restante(s).`);
