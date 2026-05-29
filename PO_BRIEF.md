@@ -202,6 +202,7 @@ User → Next.js App Router → Composant Outil → État Local (useState) → A
 **Fonctionnalités** :
 - Calcul **automatique** du nombre de mots justes (total - erreurs) dès la saisie (sans bouton)
 - Calcul **réactif** du pourcentage de réussite dès que les deux champs sont valides
+- **Tableau des 30 premières erreurs** : dès qu'un nombre total de mots valide est saisi, un tableau affiche pour 1 à 30 erreurs (plafonné au total) le nombre de mots justes, le pourcentage d'erreur et le pourcentage de réussite (issue #33)
 - Affichage détaillé du calcul (format `X.XX %`)
 - Messages d'erreur contextuels (champ invalide, total ≤ 0, erreurs hors plage)
 - Accessibilité : résultat/erreur annoncés via `aria-live` (+ `role="alert"`)
@@ -447,6 +448,7 @@ Utilisez ce tableau pour évaluer chaque proposition :
 | 1.3 | 2026-05-18 | Coding Agent | Fix : `reusable-po-rewrite.yml` injecte désormais le titre, la description et les commentaires (questions/réponses) dans le prompt Mistral |
 | 1.4 | 2026-05-18 | Coding Agent | Rebuild en 2 workflows (`po-autocreate.yml`, `po-clarify.yml`) ; `MISTRAL_API_KEY` seul secret ; prompts externalisés (`autocreate.js`, `questions.js`, `rewrite.js`) ; suppression des `reusable-po-*.yml`, `PO_TRIGGER_TOKEN`, `MISTRAL_MODEL_ID`, `po-prompt.js`, labels `needs-mistral`/`needs-clarification` |
 | 1.5 | 2026-05-29 | Coding Agent | Calcul dynamique du pourcentage de réussite (`/dictation-success`) : suppression du bouton « Calculer », calcul réactif dérivé des champs, messages d'erreur contextuels et `aria-live` (issue #11) |
+| 1.6 | 2026-05-29 | Coding Agent | Ajout d'un tableau des 30 premières erreurs sur `/dictation-success` : affiché dès la saisie d'un total de mots valide, avec mots justes, pourcentage d'erreur et pourcentage de réussite par ligne (issue #33) |
 
 ---
 
