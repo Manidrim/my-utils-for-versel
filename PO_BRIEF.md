@@ -200,14 +200,14 @@ User → Next.js App Router → Composant Outil → État Local (useState) → A
 
 ### **3. Pourcentage de Réussite (`/dictation-success`)**
 **Fonctionnalités** :
-- Calcul du nombre de mots justes (total - erreurs)
-- Calcul du pourcentage de réussite
-- Affichage détaillé du calcul
+- Calcul **automatique** du nombre de mots justes (total - erreurs) dès la saisie (sans bouton)
+- Calcul **réactif** du pourcentage de réussite dès que les deux champs sont valides
+- Affichage détaillé du calcul (format `X.XX %`)
+- Messages d'erreur contextuels (champ invalide, total ≤ 0, erreurs hors plage)
+- Accessibilité : résultat/erreur annoncés via `aria-live` (+ `role="alert"`)
 
 **Points à Améliorer** :
 - **Design incohérent** : Même problème que l'outil Pourcentages (Tailwind vs custom)
-- **Logique métier** : Ne gère pas les cas où `erreurs > total` (à corriger)
-- **Expérience utilisateur** : Pas de validation en temps réel
 
 ---
 
@@ -446,8 +446,9 @@ Utilisez ce tableau pour évaluer chaque proposition :
 | 1.2 | 2026-05-18 | Coding Agent | Convention de nommage `po-*` / `reusable-po-*` pour tous les workflows |
 | 1.3 | 2026-05-18 | Coding Agent | Fix : `reusable-po-rewrite.yml` injecte désormais le titre, la description et les commentaires (questions/réponses) dans le prompt Mistral |
 | 1.4 | 2026-05-18 | Coding Agent | Rebuild en 2 workflows (`po-autocreate.yml`, `po-clarify.yml`) ; `MISTRAL_API_KEY` seul secret ; prompts externalisés (`autocreate.js`, `questions.js`, `rewrite.js`) ; suppression des `reusable-po-*.yml`, `PO_TRIGGER_TOKEN`, `MISTRAL_MODEL_ID`, `po-prompt.js`, labels `needs-mistral`/`needs-clarification` |
+| 1.5 | 2026-05-29 | Coding Agent | Calcul dynamique du pourcentage de réussite (`/dictation-success`) : suppression du bouton « Calculer », calcul réactif dérivé des champs, messages d'erreur contextuels et `aria-live` (issue #11) |
 
 ---
 
 *Document généré automatiquement à partir de l'analyse du dépôt [Manidrim/my-utils-for-versel](https://github.com/Manidrim/my-utils-for-versel).*
-*Dernière mise à jour : 2026-05-18.*
+*Dernière mise à jour : 2026-05-29.*
