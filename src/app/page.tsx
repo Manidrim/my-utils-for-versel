@@ -75,8 +75,9 @@ const tools = [
     icon: <ConvertIcon />,
     name: "Conversions",
     description: "Unités de mesure, températures, devises",
-    tag: "Bientôt",
-    available: false,
+    tag: "Sciences",
+    available: true,
+    href: "/converter",
   },
   {
     id: "timer",

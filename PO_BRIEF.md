@@ -45,7 +45,7 @@ Créer une collection d'outils front-end simples, accessibles et déployés sur 
 |----------|--------|
 | **Étoiles GitHub** | 1 |
 | **Forks** | 0 |
-| **Issues Ouvertes** | 4 |
+| **Issues Ouvertes** | 3 |
 | **Pull Requests** | 1 |
 | **Langages** | TypeScript (97.5%), JavaScript (1.4%), CSS (1.1%) |
 | **Dernier Commit** | 2026-05-06 |
@@ -57,7 +57,7 @@ Créer une collection d'outils front-end simples, accessibles et déployés sur 
 | Calculatrice | ✅ **Disponible** | `/calculator` | Élevée (historique, clavier) |
 | Pourcentages | ✅ **Disponible** | `/percentage` | Moyenne |
 | Pourcentage de réussite (dictée) | ✅ **Disponible** | `/dictation-success` | Moyenne |
-| Conversions | ⏳ **Planifié** | `/converter` | À définir |
+| Conversions | ✅ **Disponible** | `/converter` | Moyenne (4 catégories, taux statiques) |
 | Chronomètre | ⏳ **Planifié** | `/timer` | À définir |
 
 ### **Traffic & Analytics**
@@ -212,7 +212,23 @@ User → Next.js App Router → Composant Outil → État Local (useState) → A
 
 ---
 
-### **4. Page d'Accueil**
+### **4. Conversions (`/converter`)**
+**Fonctionnalités** :
+- 4 catégories : Longueurs (8 unités), Masse (5 unités), Températures (C/F/K), Devises (EUR/USD/GBP)
+- Calcul **réactif** à la saisie (sans bouton Calculer)
+- Bouton d'inversion rapide des unités (source ↔ cible)
+- Formatage français des nombres (locale `fr-FR`)
+- Taux de change statiques pour la V1 (EUR/USD : 1,08 · EUR/GBP : 0,86)
+- Accessibilité : `aria-live="polite"` sur le résultat, labels explicites
+
+**Points Forts** :
+- Style inline cohérent avec la Calculatrice
+- Sélecteurs d'unités lisibles (labels complets)
+- Disclaimer taux statiques visible dans la catégorie Devises
+
+---
+
+### **5. Page d'Accueil**
 **Fonctionnalités** :
 - Liste des outils sous forme de cartes (`ToolCard`)
 - Section héro avec CTA
@@ -449,6 +465,7 @@ Utilisez ce tableau pour évaluer chaque proposition :
 | 1.4 | 2026-05-18 | Coding Agent | Rebuild en 2 workflows (`po-autocreate.yml`, `po-clarify.yml`) ; `MISTRAL_API_KEY` seul secret ; prompts externalisés (`autocreate.js`, `questions.js`, `rewrite.js`) ; suppression des `reusable-po-*.yml`, `PO_TRIGGER_TOKEN`, `MISTRAL_MODEL_ID`, `po-prompt.js`, labels `needs-mistral`/`needs-clarification` |
 | 1.5 | 2026-05-29 | Coding Agent | Calcul dynamique du pourcentage de réussite (`/dictation-success`) : suppression du bouton « Calculer », calcul réactif dérivé des champs, messages d'erreur contextuels et `aria-live` (issue #11) |
 | 1.6 | 2026-05-29 | Coding Agent | Ajout d'un tableau des 30 premières erreurs sur `/dictation-success` : affiché dès la saisie d'un total de mots valide, avec mots justes, pourcentage d'erreur et pourcentage de réussite par ligne (issue #33) |
+| 1.7 | 2026-06-05 | Coding Agent | Implémentation de l'outil Conversions (`/converter`) : 4 catégories (longueurs, masse, températures, devises), calcul réactif, styles inline cohérents, `aria-live` (issue #35) |
 
 ---
 
