@@ -58,6 +58,7 @@ Créer une collection d'outils front-end simples, accessibles et déployés sur 
 | Pourcentages | ✅ **Disponible** | `/percentage` | Moyenne |
 | Pourcentage de réussite (dictée) | ✅ **Disponible** | `/dictation-success` | Moyenne |
 | Conversions | ✅ **Disponible** | `/converter` | Moyenne (4 catégories, taux statiques) |
+| Tables de multiplication (jeu) | ✅ **Disponible** | `/multiplication` | Moyenne (quiz, score, séries) |
 | Chronomètre | ⏳ **Planifié** | `/timer` | À définir |
 
 ### **Traffic & Analytics**
@@ -228,7 +229,28 @@ User → Next.js App Router → Composant Outil → État Local (useState) → A
 
 ---
 
-### **5. Page d'Accueil**
+### **5. Tables de Multiplication (`/multiplication`)**
+**Fonctionnalités** :
+- **Jeu d'apprentissage** des tables de multiplication (multiplications à un chiffre, facteurs de 1 à 9)
+- Sélecteur de table : **Mélange** (aléatoire) ou une table précise (×1 à ×9)
+- Validation au clavier (**Entrée**) ou au bouton, puis passage à la question suivante
+- Retour visuel immédiat (bonne réponse en vert, réponse attendue affichée en cas d'erreur), annoncé via `aria-live`
+- Suivi de score : **bonnes réponses / total**, **série** en cours et **record** de série (encouragement tous les 5 d'affilée)
+- Bouton **Recommencer** pour réinitialiser le score
+- Première question déterministe (rendu serveur/client identique, aucun écart d'hydratation)
+
+**Points Forts** :
+- Style inline cohérent avec la Calculatrice et les Conversions
+- Gestion du focus pour enchaîner les questions sans la souris
+- Accessibilité : labels explicites, feedback `role="status"` / `aria-live`
+
+**Points à Améliorer** :
+- Pas de persistance du record entre les sessions (cf. P005)
+- Une seule opération (multiplication) — extensible à d'autres opérations (cf. P016)
+
+---
+
+### **6. Page d'Accueil**
 **Fonctionnalités** :
 - Liste des outils sous forme de cartes (`ToolCard`)
 - Section héro avec CTA
@@ -276,6 +298,7 @@ User → Next.js App Router → Composant Outil → État Local (useState) → A
 | **P013** | **Pas de partage social** | 📤 **Viralité** | Ajouter boutons de partage (Twitter, LinkedIn) | Faible | ⭐⭐ |
 | **P014** | **Design system incomplet** | 🎨 **Cohérence future** | Créer un design system (Storybook) | Élevé | ⭐⭐ |
 | **P015** | **Pas de documentation utilisateur** | 📖 **Adoption** | Ajouter une page `/docs` ou `/help` | Moyen | ⭐⭐ |
+| **P016** | **Jeu d'apprentissage limité à la multiplication** | 🎓 **Potentiel éducatif sous-exploité** | Ajouter d'autres opérations (addition, soustraction, division), des niveaux de difficulté et la persistance du record (`localStorage`) | Moyen | ⭐⭐⭐ |
 
 ---
 
@@ -435,6 +458,7 @@ Utilisez ce tableau pour évaluer chaque proposition :
 | 2026-05-18 | **Convention de nommage `po-*` / `reusable-po-*`** | Nommage clair et cohérent des workflows (fin des suffixes `_handler`/`-v2`) | PO |
 | 2026-05-18 | **Correction du prompt de réécriture (`reusable-po-rewrite.yml`)** | Le prompt ignorait titre/description/réponses de l'issue : injection du contexte complet (issue + échanges de clarification) pour une réécriture pertinente | Coding Agent |
 | 2026-05-18 | **Rebuild en 2 workflows (`po-autocreate.yml`, `po-clarify.yml`)** | Simplification : `MISTRAL_API_KEY` seul secret, prompts externalisés dans `.github/prompts/`, suppression de tous les `reusable-po-*.yml`, de `PO_TRIGGER_TOKEN` et `MISTRAL_MODEL_ID` | Coding Agent |
+| 2026-06-10 | **Introduction d'une catégorie « Jeu » + premier jeu éducatif** | Tuile « Tables de multiplication » : exercice de multiplications à un chiffre pour apprendre les tables, pensé comme une base extensible à d'autres opérations | Coding Agent |
 
 ### **Questions Ouvertes**
 1. **Faut-il ajouter un backend ?**
@@ -466,8 +490,9 @@ Utilisez ce tableau pour évaluer chaque proposition :
 | 1.5 | 2026-05-29 | Coding Agent | Calcul dynamique du pourcentage de réussite (`/dictation-success`) : suppression du bouton « Calculer », calcul réactif dérivé des champs, messages d'erreur contextuels et `aria-live` (issue #11) |
 | 1.6 | 2026-05-29 | Coding Agent | Ajout d'un tableau des 30 premières erreurs sur `/dictation-success` : affiché dès la saisie d'un total de mots valide, avec mots justes, pourcentage d'erreur et pourcentage de réussite par ligne (issue #33) |
 | 1.7 | 2026-06-05 | Coding Agent | Implémentation de l'outil Conversions (`/converter`) : 4 catégories (longueurs, masse, températures, devises), calcul réactif, styles inline cohérents, `aria-live` (issue #35) |
+| 1.8 | 2026-06-10 | Coding Agent | Ajout d'une tuile « Jeu » et d'un jeu d'apprentissage des tables de multiplication (`/multiplication`) : multiplications à un chiffre, sélecteur de table (mélange ou ×1–×9), score/série/record, validation clavier et feedback `aria-live` |
 
 ---
 
 *Document généré automatiquement à partir de l'analyse du dépôt [Manidrim/my-utils-for-versel](https://github.com/Manidrim/my-utils-for-versel).*
-*Dernière mise à jour : 2026-05-29.*
+*Dernière mise à jour : 2026-06-10.*
