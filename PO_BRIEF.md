@@ -459,6 +459,7 @@ Utilisez ce tableau pour évaluer chaque proposition :
 | 2026-05-18 | **Correction du prompt de réécriture (`reusable-po-rewrite.yml`)** | Le prompt ignorait titre/description/réponses de l'issue : injection du contexte complet (issue + échanges de clarification) pour une réécriture pertinente | Coding Agent |
 | 2026-05-18 | **Rebuild en 2 workflows (`po-autocreate.yml`, `po-clarify.yml`)** | Simplification : `MISTRAL_API_KEY` seul secret, prompts externalisés dans `.github/prompts/`, suppression de tous les `reusable-po-*.yml`, de `PO_TRIGGER_TOKEN` et `MISTRAL_MODEL_ID` | Coding Agent |
 | 2026-06-10 | **Introduction d'une catégorie « Jeu » + premier jeu éducatif** | Tuile « Tables de multiplication » : exercice de multiplications à un chiffre pour apprendre les tables, pensé comme une base extensible à d'autres opérations | Coding Agent |
+| 2026-06-10 | **Ajout d'un dossier de skills projet (`.claude/skills/`)** | Skills Claude Code `nouvel-outil` (scaffolding d'un outil selon les conventions) et `regles-metier` (catalogue/localisation des règles métier) pour accélérer le développement et la recherche de logique métier | Coding Agent |
 
 ### **Questions Ouvertes**
 1. **Faut-il ajouter un backend ?**
@@ -491,6 +492,7 @@ Utilisez ce tableau pour évaluer chaque proposition :
 | 1.6 | 2026-05-29 | Coding Agent | Ajout d'un tableau des 30 premières erreurs sur `/dictation-success` : affiché dès la saisie d'un total de mots valide, avec mots justes, pourcentage d'erreur et pourcentage de réussite par ligne (issue #33) |
 | 1.7 | 2026-06-05 | Coding Agent | Implémentation de l'outil Conversions (`/converter`) : 4 catégories (longueurs, masse, températures, devises), calcul réactif, styles inline cohérents, `aria-live` (issue #35) |
 | 1.8 | 2026-06-10 | Coding Agent | Ajout d'une tuile « Jeu » et d'un jeu d'apprentissage des tables de multiplication (`/multiplication`) : multiplications à un chiffre, sélecteur de table (mélange ou ×1–×9), score/série/record, validation clavier et feedback `aria-live` |
+| 1.9 | 2026-06-10 | Coding Agent | Ajout d'un dossier de skills projet (`.claude/skills/`) : `nouvel-outil` (guide de scaffolding d'un outil selon les conventions) et `regles-metier` (catalogue et localisation des règles métier) pour faciliter le développement et la recherche de logique métier |
 
 ---
 
