@@ -232,8 +232,8 @@ User → Next.js App Router → Composant Outil → État Local (useState) → A
 
 ### **5. Tables de Multiplication (`/multiplication`)**
 **Fonctionnalités** :
-- **Jeu d'apprentissage** des tables de multiplication (multiplications à un chiffre, facteurs de 1 à 9)
-- Sélecteur de table : **Mélange** (aléatoire) ou une table précise (×1 à ×9)
+- **Jeu d'apprentissage** des tables de multiplication (multiplications jusqu'à 10, facteurs de 1 à 10)
+- Sélecteur de table : **Mélange** (aléatoire) ou une table précise (×1 à ×10)
 - Validation au clavier (**Entrée**) ou au bouton, puis passage à la question suivante
 - Retour visuel immédiat (bonne réponse en vert, réponse attendue affichée en cas d'erreur), annoncé via `aria-live`
 - Suivi de score : **bonnes réponses / total**, **série** en cours et **record** de série (encouragement tous les 5 d'affilée)
@@ -253,8 +253,8 @@ User → Next.js App Router → Composant Outil → État Local (useState) → A
 
 ### **6. Tables d'Addition (`/addition`)**
 **Fonctionnalités** :
-- **Jeu d'apprentissage** des tables d'addition (additions à un chiffre, termes de 1 à 10)
-- Sélecteur de table : **Mélange** (aléatoire) ou une table précise (+1 à +9)
+- **Jeu d'apprentissage** des tables d'addition (additions jusqu'à 10, termes de 1 à 10)
+- Sélecteur de table : **Mélange** (aléatoire) ou une table précise (+1 à +10)
 - Validation au clavier (**Entrée**) ou au bouton, puis passage à la question suivante
 - Retour visuel immédiat (bonne réponse en vert, réponse attendue affichée en cas d'erreur), annoncé via `aria-live`
 - Suivi de score : **bonnes réponses / total**, **série** en cours et **record** de série (encouragement tous les 5 d'affilée)
@@ -482,6 +482,7 @@ Utilisez ce tableau pour évaluer chaque proposition :
 | 2026-06-10 | **Introduction d'une catégorie « Jeu » + premier jeu éducatif** | Tuile « Tables de multiplication » : exercice de multiplications à un chiffre pour apprendre les tables, pensé comme une base extensible à d'autres opérations | Coding Agent |
 | 2026-06-10 | **Ajout d'un dossier de skills projet (`.claude/skills/`)** | Skills Claude Code `nouvel-outil` (scaffolding d'un outil selon les conventions) et `regles-metier` (catalogue/localisation des règles métier) pour accélérer le développement et la recherche de logique métier | Coding Agent |
 | 2026-06-16 | **Extension de la catégorie « Jeu » à l'addition** | Tuile « Tables d'addition » (`/addition`) reprenant les codes de la tuile multiplication : additions à un chiffre (termes 1–10), sélecteur de table, score/série/record | Coding Agent |
+| 2026-06-16 | **Ajout de la table de dix aux jeux d'addition et de multiplication** | Ajout du bouton de table ×10 / +10 sur les deux jeux ; la plage des facteurs de multiplication passe de 1–9 à 1–10 (Mélange et tables incluses) pour une table de dix complète | Coding Agent |
 
 ### **Questions Ouvertes**
 1. **Faut-il ajouter un backend ?**
@@ -516,6 +517,7 @@ Utilisez ce tableau pour évaluer chaque proposition :
 | 1.8 | 2026-06-10 | Coding Agent | Ajout d'une tuile « Jeu » et d'un jeu d'apprentissage des tables de multiplication (`/multiplication`) : multiplications à un chiffre, sélecteur de table (mélange ou ×1–×9), score/série/record, validation clavier et feedback `aria-live` |
 | 1.9 | 2026-06-10 | Coding Agent | Ajout d'un dossier de skills projet (`.claude/skills/`) : `nouvel-outil` (guide de scaffolding d'un outil selon les conventions) et `regles-metier` (catalogue et localisation des règles métier) pour faciliter le développement et la recherche de logique métier |
 | 2.0 | 2026-06-16 | Coding Agent | Ajout de la tuile « Tables d'addition » (`/addition`) reprenant les codes de la tuile multiplication : additions à un chiffre (termes 1–10), sélecteur de table (mélange ou +1–+9), score/série/record, validation clavier et feedback `aria-live` |
+| 2.1 | 2026-06-16 | Coding Agent | Ajout de la table de dix aux jeux d'addition et de multiplication : nouveau bouton de table (+10 / ×10) et extension de la plage des facteurs de multiplication à 1–10 (Mélange et tables) ; mise à jour des descriptions (« jusqu'à 10 ») |
 
 ---
 

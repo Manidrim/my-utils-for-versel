@@ -7,7 +7,7 @@ type Question = { a: number; b: number };
 type Feedback = { correct: boolean; expected: number; a: number; b: number };
 type TableChoice = number | "all";
 
-const TABLES: TableChoice[] = ["all", 1, 2, 3, 4, 5, 6, 7, 8, 9];
+const TABLES: TableChoice[] = ["all", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 const palette = {
   bg: "#FDF6F4",
@@ -154,7 +154,7 @@ export default function AdditionGame() {
           Tables d'addition
         </h1>
         <p style={{ color: palette.secondary, fontSize: "15px", marginBottom: "32px" }}>
-          Entraîne-toi aux additions à un chiffre.
+          Entraîne-toi aux additions jusqu'à 10.
         </p>
 
         {/* Table selector */}

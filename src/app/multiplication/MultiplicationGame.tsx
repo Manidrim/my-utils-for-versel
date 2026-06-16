@@ -7,7 +7,7 @@ type Question = { a: number; b: number };
 type Feedback = { correct: boolean; expected: number; a: number; b: number };
 type TableChoice = number | "all";
 
-const TABLES: TableChoice[] = ["all", 1, 2, 3, 4, 5, 6, 7, 8, 9];
+const TABLES: TableChoice[] = ["all", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 const palette = {
   bg: "#FDF6F4",
@@ -30,10 +30,10 @@ function randInt(min: number, max: number): number {
 
 function makeQuestion(table: TableChoice): Question {
   if (table === "all") {
-    return { a: randInt(1, 9), b: randInt(1, 9) };
+    return { a: randInt(1, 10), b: randInt(1, 10) };
   }
   // Garde la table choisie comme l'un des facteurs ; côté aléatoire pour varier.
-  const other = randInt(1, 9);
+  const other = randInt(1, 10);
   return Math.random() < 0.5 ? { a: table, b: other } : { a: other, b: table };
 }
 
@@ -154,7 +154,7 @@ export default function MultiplicationGame() {
           Tables de multiplication
         </h1>
         <p style={{ color: palette.secondary, fontSize: "15px", marginBottom: "32px" }}>
-          Entraîne-toi aux multiplications à un chiffre.
+          Entraîne-toi aux multiplications jusqu'à 10.
         </p>
 
         {/* Table selector */}
