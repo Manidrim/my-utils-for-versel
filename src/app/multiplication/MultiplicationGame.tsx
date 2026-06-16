@@ -154,7 +154,7 @@ export default function MultiplicationGame() {
           Tables de multiplication
         </h1>
         <p style={{ color: palette.secondary, fontSize: "15px", marginBottom: "32px" }}>
-          Entraîne-toi aux multiplications jusqu'à 10.
+          Entraîne-toi aux multiplications jusqu&apos;à 10.
         </p>
 
         {/* Table selector */}

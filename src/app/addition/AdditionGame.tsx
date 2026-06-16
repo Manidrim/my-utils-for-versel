@@ -151,10 +151,10 @@ export default function AdditionGame() {
             marginBottom: "8px",
           }}
         >
-          Tables d'addition
+          Tables d&apos;addition
         </h1>
         <p style={{ color: palette.secondary, fontSize: "15px", marginBottom: "32px" }}>
-          Entraîne-toi aux additions jusqu'à 10.
+          Entraîne-toi aux additions jusqu&apos;à 10.
         </p>
 
         {/* Table selector */}
