@@ -35,6 +35,14 @@ const ConvertIcon = () => (
   </svg>
 );
 
+const AdditionIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="4" />
+    <line x1="12" y1="8" x2="12" y2="16" />
+    <line x1="8" y1="12" x2="16" y2="12" />
+  </svg>
+);
+
 const MultiplicationIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="4" />
@@ -86,6 +94,15 @@ const tools = [
     tag: "Sciences",
     available: true,
     href: "/converter",
+  },
+  {
+    id: "addition",
+    icon: <AdditionIcon />,
+    name: "Tables d'addition",
+    description: "Jeu d'apprentissage : révise tes tables avec des additions à un chiffre",
+    tag: "Jeu",
+    available: true,
+    href: "/addition",
   },
   {
     id: "multiplication",
