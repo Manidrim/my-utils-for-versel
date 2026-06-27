@@ -48,7 +48,7 @@ Créer une collection d'outils front-end simples, accessibles et déployés sur 
 | **Issues Ouvertes** | 3 |
 | **Pull Requests** | 1 |
 | **Langages** | TypeScript (97.5%), JavaScript (1.4%), CSS (1.1%) |
-| **Dernier Commit** | 2026-05-06 |
+| **Dernier Commit** | 2026-06-27 |
 | **Taille Bundle** | À mesurer (Next.js 16) |
 
 ### **Statut des Fonctionnalités**
@@ -518,8 +518,9 @@ Utilisez ce tableau pour évaluer chaque proposition :
 | 1.9 | 2026-06-10 | Coding Agent | Ajout d'un dossier de skills projet (`.claude/skills/`) : `nouvel-outil` (guide de scaffolding d'un outil selon les conventions) et `regles-metier` (catalogue et localisation des règles métier) pour faciliter le développement et la recherche de logique métier |
 | 2.0 | 2026-06-16 | Coding Agent | Ajout de la tuile « Tables d'addition » (`/addition`) reprenant les codes de la tuile multiplication : additions à un chiffre (termes 1–10), sélecteur de table (mélange ou +1–+9), score/série/record, validation clavier et feedback `aria-live` |
 | 2.1 | 2026-06-16 | Coding Agent | Ajout de la table de dix aux jeux d'addition et de multiplication : nouveau bouton de table (+10 / ×10) et extension de la plage des facteurs de multiplication à 1–10 (Mélange et tables) ; mise à jour des descriptions (« jusqu'à 10 ») |
+| 2.2 | 2026-06-27 | Coding Agent | Mise à jour complète de README.md : ajout de tous les outils actuels (Conversions, Tables d'addition, Tables de multiplication), amélioration de la documentation, ajout des liens vers PO_BRIEF.md et AGENTS.md |
 
 ---
 
 *Document généré automatiquement à partir de l'analyse du dépôt [Manidrim/my-utils-for-versel](https://github.com/Manidrim/my-utils-for-versel).*
-*Dernière mise à jour : 2026-06-16.*
+*Dernière mise à jour : 2026-06-27.*
