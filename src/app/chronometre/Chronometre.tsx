@@ -1,3 +1,5 @@
+url: https://raw.githubusercontent.com/Manidrim/my-utils-for-versel/feat/chronometre-implementation/src/app/chronometre/Chronometre.tsx
+
 "use client";
 import { useState, useEffect } from "react";
 
@@ -6,7 +8,7 @@ export default function Chronometre() {
   const [isRunning, setIsRunning] = useState(false);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    let interval: ReturnType<typeof setTimeout> | null = null;
     if (isRunning) {
       interval = setInterval(() => {
         setTime((prevTime) => prevTime + 10);
@@ -56,7 +58,8 @@ export default function Chronometre() {
           onClick={startStop}
           style={{
             padding: "12px 24px",
-            background: isRunning ? "#E07B72" : "#6BA368",
+            background: isRunning ? "#E07B72" : "#
+6BA368",
             color: "white",
             border: "none",
             borderRadius: "8px",
