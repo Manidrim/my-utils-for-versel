@@ -114,12 +114,13 @@ const tools = [
     href: "/multiplication",
   },
   {
-    id: "timer",
+    id: "chronometre",
     icon: <TimerIcon />,
-    name: "Chronomètre",
-    description: "Minuterie et compteur de temps",
-    tag: "Bientôt",
-    available: false,
+    name: "Chronometre",
+    description: "Mesurer le temps écoulé",
+    tag: "Nouveau",
+    available: true,
+    href: "/chronometre",
   },
 ];
 
