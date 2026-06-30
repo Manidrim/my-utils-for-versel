@@ -519,8 +519,9 @@ Utilisez ce tableau pour évaluer chaque proposition :
 | 2.0 | 2026-06-16 | Coding Agent | Ajout de la tuile « Tables d'addition » (`/addition`) reprenant les codes de la tuile multiplication : additions à un chiffre (termes 1–10), sélecteur de table (mélange ou +1–+9), score/série/record, validation clavier et feedback `aria-live` |
 | 2.1 | 2026-06-16 | Coding Agent | Ajout de la table de dix aux jeux d'addition et de multiplication : nouveau bouton de table (+10 / ×10) et extension de la plage des facteurs de multiplication à 1–10 (Mélange et tables) ; mise à jour des descriptions (« jusqu'à 10 ») |
 | 2.2 | 2026-06-27 | Coding Agent | Mise à jour complète de README.md : ajout de tous les outils actuels (Conversions, Tables d'addition, Tables de multiplication), amélioration de la documentation, ajout des liens vers PO_BRIEF.md et AGENTS.md |
+| 2.3 | 2026-06-30 | Coding Agent | Correction de l'échec de build Vercel sur la PR #43 (Chronomètre) : suppression des lignes `url:` parasites en tête de `page.tsx` et `Chronometre.tsx`, réparation de l'identifiant `MultiplicationIcon` et de la couleur `#6BA368` scindés sur deux lignes, suppression du fichier de test parasite, remplacement de `<a>` par `<Link>` (next/link). Nouvel outil Chronomètre (`/chronometre`) désormais fonctionnel et déployable |
 
 ---
 
 *Document généré automatiquement à partir de l'analyse du dépôt [Manidrim/my-utils-for-versel](https://github.com/Manidrim/my-utils-for-versel).*
-*Dernière mise à jour : 2026-06-27.*
+*Dernière mise à jour : 2026-06-30.*

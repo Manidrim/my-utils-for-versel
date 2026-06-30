@@ -1,7 +1,6 @@
-url: https://raw.githubusercontent.com/Manidrim/my-utils-for-versel/feat/chronometre-implementation/src/app/chronometre/Chronometre.tsx
-
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 export default function Chronometre() {
   const [time, setTime] = useState(0);
@@ -58,8 +57,7 @@ export default function Chronometre() {
           onClick={startStop}
           style={{
             padding: "12px 24px",
-            background: isRunning ? "#E07B72" : "#
-6BA368",
+            background: isRunning ? "#E07B72" : "#6BA368",
             color: "white",
             border: "none",
             borderRadius: "8px",
@@ -87,7 +85,7 @@ export default function Chronometre() {
         </button>
       </div>
       <div style={{ textAlign: "center", marginTop: "24px" }}>
-        <a href="/" style={{ fontSize: "12px", color: "#7A5550" }}>← Retour</a>
+        <Link href="/" style={{ fontSize: "12px", color: "#7A5550" }}>← Retour</Link>
       </div>
     </div>
   );

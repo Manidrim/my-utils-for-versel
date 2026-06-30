@@ -1,5 +1,3 @@
-url: https://raw.githubusercontent.com/Manidrim/my-utils-for-versel/feat/chronometre-implementation/src/app/page.tsx
-
 import ToolCard from "./components/ToolCard";
 import HeroCTA from "./components/HeroCTA";
 
@@ -45,8 +43,7 @@ const AdditionIcon = () => (
   </svg>
 );
 
-const Mul
-tiplicationIcon = () => (
+const MultiplicationIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="4" />
     <line x1="9" y1="9" x2="15" y2="15" />
@@ -114,8 +111,7 @@ const tools = [
     description: "Jeu d'apprentissage : révise tes tables avec des multiplications jusqu'à 10",
     tag: "Jeu",
     available: true,
-  
-  href: "/multiplication",
+    href: "/multiplication",
   },
   {
     id: "chronometre",
@@ -196,8 +192,7 @@ export default function Home() {
       </div>
 
       {/* Tools section */}
-      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: 
-"0 32px" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 32px" }}>
         <div
           style={{
             fontSize: "11px",
